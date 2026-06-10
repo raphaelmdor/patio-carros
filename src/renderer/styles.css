@@ -373,3 +373,98 @@ textarea { resize: vertical; }
 ::-webkit-scrollbar-track { background: var(--bg0); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--txt2); }
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+
+/* Remove app-region do Electron — irrelevante no navegador */
+header, nav { -webkit-app-region: unset; }
+
+/* ── Tablet (≤ 900px) ──────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .cards { grid-template-columns: repeat(2, 1fr); }
+
+  #patio-table th:nth-child(5),
+  #patio-table td:nth-child(5) { display: none; } /* Proprietário */
+}
+
+/* ── Mobile (≤ 600px) ──────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  /* Header compacto */
+  header { padding: 8px 14px; }
+  header h1 { font-size: 14px; }
+  .logo { font-size: 18px; }
+  .clock { font-size: 11px; letter-spacing: 0; }
+
+  /* Nav scrollável horizontal sem barra visível */
+  nav {
+    padding: 5px 8px;
+    gap: 4px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Conteúdo principal */
+  main { padding: 14px 12px; }
+  h2   { font-size: 16px; margin-bottom: 12px; }
+
+  /* Cards empilhados */
+  .cards { grid-template-columns: 1fr; gap: 10px; margin-bottom: 18px; }
+  .card  { padding: 14px 16px; }
+  .card-icon  { font-size: 24px; }
+  .card-value { font-size: 26px; }
+
+  /* Formulário ocupa largura total */
+  .form-card { padding: 14px; max-width: 100%; }
+  .form-grid { grid-template-columns: 1fr; gap: 0; }
+
+  /* Placa em linha própria */
+  .placa-row { flex-direction: column; gap: 8px; }
+  .input-placa { width: 100% !important; font-size: 18px; letter-spacing: 2px; }
+
+  /* Botão principal ocupa toda a largura */
+  .btn-lg { width: 100%; justify-content: center; }
+
+  /* Filtros empilhados */
+  .filters { flex-direction: column; align-items: stretch; gap: 8px; }
+  .filters input { max-width: 100%; }
+  .filters .btn  { align-self: flex-start; }
+
+  /* Section header não quebra */
+  .section-header { flex-wrap: wrap; gap: 8px; }
+
+  /* Tabela — células menores */
+  th { padding: 8px 10px; font-size: 10px; }
+  td { padding: 9px 10px; font-size: 12px; }
+
+  /* Pátio: esconde colunas secundárias (Cor, Proprietário, Entrada, Vaga) */
+  #patio-table th:nth-child(4),
+  #patio-table td:nth-child(4) { display: none; }
+  #patio-table th:nth-child(5),
+  #patio-table td:nth-child(5) { display: none; }
+  #patio-table th:nth-child(6),
+  #patio-table td:nth-child(6) { display: none; }
+  #patio-table th:nth-child(8),
+  #patio-table td:nth-child(8) { display: none; }
+
+  /* Dashboard: esconde Vaga */
+  #tab-dashboard th:nth-child(5),
+  #tab-dashboard td:nth-child(5) { display: none; }
+
+  /* Histórico: esconde Vaga e Valor */
+  #tab-historico th:nth-child(5),
+  #tab-historico td:nth-child(5) { display: none; }
+  #tab-historico th:nth-child(6),
+  #tab-historico td:nth-child(6) { display: none; }
+
+  /* Modal foto ocupa quase toda a tela */
+  .modal-img { max-width: 95vw; max-height: 85vh; }
+}
