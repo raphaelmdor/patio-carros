@@ -8,7 +8,8 @@
     "start": "npm run build && electron .",
     "dev": "concurrently \"tsc --watch\" \"wait-on dist/main/index.js && electron .\"",
     "clean": "rimraf dist",
-    "web": "tsc -p tsconfig.web.json && node dist/web/server.js"
+    "web": "tsc -p tsconfig.web.json && node dist/web/server.js",
+    "web:start": "node dist/web/server.js"
   },
   "dependencies": {
     "@types/express": "^5.0.6",

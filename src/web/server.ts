@@ -20,7 +20,9 @@ app.use((_req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   next();
 });
-app.use(express.static(path.join(process.cwd(), 'src', 'web', 'public')));
+// __dirname = dist/web/ → ../../src/web/public
+const PUBLIC_DIR = path.join(__dirname, '..', '..', 'src', 'web', 'public');
+app.use(express.static(PUBLIC_DIR));
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
