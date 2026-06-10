@@ -271,10 +271,9 @@ export async function buscarHistorico(filtros: FiltroBusca): Promise<any[]> {
     params.push(`${filtros.dataFim} 23:59:59`);
   }
 
-  query += ' ORDER BY m.data_hora DESC LIMIT ?';
-  params.push(filtros.limit ?? 100);
+  query += ` ORDER BY m.data_hora DESC LIMIT ${Math.floor(filtros.limit ?? 100)}`;
 
-  const [rows] = await pool.execute<any[]>(query, params);
+  const [rows] = await pool.query<any[]>(query, params);
   return rows;
 }
 

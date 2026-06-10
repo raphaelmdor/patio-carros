@@ -7,12 +7,15 @@
     "build": "tsc",
     "start": "npm run build && electron .",
     "dev": "concurrently \"tsc --watch\" \"wait-on dist/main/index.js && electron .\"",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "web": "tsc -p tsconfig.web.json && node dist/web/server.js"
   },
   "dependencies": {
+    "@types/express": "^5.0.6",
     "axios": "^1.7.0",
     "dotenv": "^16.4.0",
     "electron": "^30.0.0",
+    "express": "^5.2.1",
     "mysql2": "^3.10.0",
     "playwright-core": "^1.60.0"
   },
