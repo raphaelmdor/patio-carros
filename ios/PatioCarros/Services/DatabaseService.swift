@@ -169,9 +169,9 @@ class DatabaseService: ObservableObject {
               )
             """,
             [
-                MySQLData(string: placa),
-                MySQLData(string: placa),
-                MySQLData(string: placa),
+                mysqlString(placa),
+                mysqlString(placa),
+                mysqlString(placa),
             ]
         ).get()
         return (rows.first?.column("c")?.int ?? 0) > 0
@@ -190,19 +190,19 @@ class DatabaseService: ObservableObject {
               cor = VALUES(cor), proprietario = VALUES(proprietario), updated_at = NOW()
             """,
             [
-                MySQLData(string: veiculo.placa),
-                MySQLData(string: veiculo.marca),
-                MySQLData(string: veiculo.modelo),
-                veiculo.ano.map { MySQLData(int: $0) } ?? MySQLData.makeNull(),
-                veiculo.cor.map { MySQLData(string: $0) } ?? MySQLData.makeNull(),
-                veiculo.proprietario.map { MySQLData(string: $0) } ?? MySQLData.makeNull(),
+                mysqlString(veiculo.placa),
+                mysqlString(veiculo.marca),
+                mysqlString(veiculo.modelo),
+                veiculo.ano.map { mysqlInt($0) } ?? mysqlNull(),
+                veiculo.cor.map { mysqlString($0) } ?? mysqlNull(),
+                veiculo.proprietario.map { mysqlString($0) } ?? mysqlNull(),
             ]
         ).get()
 
         // Get veiculo id
         let rows = try await conn.query(
             "SELECT id FROM veiculos WHERE placa = ?",
-            [MySQLData(string: veiculo.placa)]
+            [mysqlString(veiculo.placa)]
         ).get()
         guard let veiculoId = rows.first?.column("id")?.int else { throw DBError.queryFailed }
 
@@ -210,9 +210,9 @@ class DatabaseService: ObservableObject {
         try await conn.query(
             "INSERT INTO movimentacoes (veiculo_id, placa, tipo, observacao) VALUES (?, ?, 'entrada', ?)",
             [
-                MySQLData(int: veiculoId),
-                MySQLData(string: veiculo.placa),
-                observacao.map { MySQLData(string: $0) } ?? MySQLData.makeNull(),
+                mysqlInt(veiculoId),
+                mysqlString(veiculo.placa),
+                observacao.map { mysqlString($0) } ?? mysqlNull(),
             ]
         ).get()
     }
@@ -225,7 +225,7 @@ class DatabaseService: ObservableObject {
         // Get veiculo id
         let vRows = try await conn.query(
             "SELECT id FROM veiculos WHERE placa = ?",
-            [MySQLData(string: placa)]
+            [mysqlString(placa)]
         ).get()
         guard let veiculoId = vRows.first?.column("id")?.int else { throw DBError.veiculoNaoEncontrado }
 
@@ -236,16 +236,16 @@ class DatabaseService: ObservableObject {
             WHERE veiculo_id = ? AND tipo = 'entrada'
             ORDER BY data_hora DESC LIMIT 1
             """,
-            [MySQLData(int: veiculoId)]
+            [mysqlInt(veiculoId)]
         ).get()
         let entrada = mRows.first?.column("data_hora")?.date ?? Date()
 
         try await conn.query(
             "INSERT INTO movimentacoes (veiculo_id, placa, tipo, observacao) VALUES (?, ?, 'saida', ?)",
             [
-                MySQLData(int: veiculoId),
-                MySQLData(string: placa),
-                observacao.map { MySQLData(string: $0) } ?? MySQLData.makeNull(),
+                mysqlInt(veiculoId),
+                mysqlString(placa),
+                observacao.map { mysqlString($0) } ?? mysqlNull(),
             ]
         ).get()
 
@@ -268,15 +268,15 @@ class DatabaseService: ObservableObject {
 
         if let p = placa, !p.isEmpty {
             sql += " AND m.placa LIKE ?"
-            params.append(MySQLData(string: "%\(p.uppercased())%"))
+            params.append(mysqlString("%\(p.uppercased())%"))
         }
         if let d = dataInicio {
             sql += " AND m.data_hora >= ?"
-            params.append(MySQLData(string: iso8601(d)))
+            params.append(mysqlString(iso8601(d)))
         }
         if let d = dataFim {
             sql += " AND m.data_hora <= ?"
-            params.append(MySQLData(string: iso8601(d)))
+            params.append(mysqlString(iso8601(d)))
         }
         sql += " ORDER BY m.data_hora DESC LIMIT 200"
 
@@ -306,6 +306,24 @@ class DatabaseService: ObservableObject {
     }
 }
 
+// MARK: - MySQLData factory helpers
+// These wrappers isolate us from MySQLData initializer API differences across versions.
+
+/// Creates a MySQLData from a String value.
+private func mysqlString(_ value: String) -> MySQLData {
+    MySQLData(string: value)
+}
+
+/// Creates a MySQLData from an Int value using string encoding (universally safe).
+private func mysqlInt(_ value: Int) -> MySQLData {
+    MySQLData(string: String(value))
+}
+
+/// Creates a MySQL NULL value.
+private func mysqlNull() -> MySQLData {
+    MySQLData(string: nil)
+}
+
 // MARK: - Errors
 
 enum DBError: LocalizedError {
@@ -319,15 +337,5 @@ enum DBError: LocalizedError {
         case .queryFailed: return "Falha na consulta"
         case .veiculoNaoEncontrado: return "Veículo não encontrado"
         }
-    }
-}
-
-// MARK: - MySQLData helpers
-
-extension MySQLData {
-    /// Returns a MySQL NULL value.
-    static func makeNull() -> MySQLData {
-        // MySQLData has no public 'null' static property; construct via nil string.
-        MySQLData(string: nil)
     }
 }
