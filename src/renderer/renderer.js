@@ -1,7 +1,23 @@
-// renderer.js — Lógica do processo renderer (Electron)
-// Todas as chamadas ao backend passam por window.api (exposto pelo preload.ts)
-
 'use strict';
+
+// ─── Cliente da API HTTP ──────────────────────────────────────────────────────
+
+async function _apiFetch(method, url, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  return r.json();
+}
+
+const api = {
+  getDashboard:          ()       => _apiFetch('GET',  '/api/dashboard'),
+  buscarHistorico:       (f)      => _apiFetch('GET',  '/api/historico?' + new URLSearchParams(Object.fromEntries(Object.entries(f ?? {}).filter(([,v]) => v != null)))),
+  consultarPlaca:        (placa)  => _apiFetch('GET',  `/api/placa/${encodeURIComponent(placa)}`),
+  registrarEntrada:      (dados)  => _apiFetch('POST', '/api/entrada', dados),
+  registrarSaida:        (placa)  => _apiFetch('POST', '/api/saida', { placa }),
+  listarVeiculosNoPatio: ()       => _apiFetch('GET',  '/api/patio'),
+  getFotosVeiculo:       (placa)  => _apiFetch('GET',  `/api/fotos/${encodeURIComponent(placa)}`),
+};
 
 // ─── Relógio ─────────────────────────────────────────────────────────────────
 
@@ -43,7 +59,7 @@ document.querySelectorAll('.input-placa').forEach(el => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 async function loadDashboard() {
-  const res = await window.api.getDashboard();
+  const res = await api.getDashboard();
   if (res.success) {
     const d = res.data;
     setText('dash-no-patio',  d.veiculosNoPatio);
@@ -51,7 +67,7 @@ async function loadDashboard() {
     setText('dash-total',     d.totalVeiculos);
   }
 
-  const hist = await window.api.buscarHistorico({ limit: 8 });
+  const hist = await api.buscarHistorico({ limit: 8 });
   if (hist.success) renderRecentTable(hist.data);
 }
 
@@ -86,7 +102,7 @@ btnConsultar.addEventListener('click', async () => {
   setHint('🔄 Consultando DETRAN...', 'spin');
   btnConsultar.disabled = true;
 
-  const res = await window.api.consultarPlaca(placa);
+  const res = await api.consultarPlaca(placa);
   btnConsultar.disabled = false;
 
   if (res.success && res.data) {
@@ -123,7 +139,7 @@ document.getElementById('btn-registrar-entrada').addEventListener('click', async
     fotosBase64:  fotosBase64Atual.length ? fotosBase64Atual : undefined,
   };
 
-  const res = await window.api.registrarEntrada(dados);
+  const res = await api.registrarEntrada(dados);
   if (res.success) {
     showResult('entrada-result', `✅ Entrada registrada com sucesso! (Registro #${res.data.movimentacaoId})`, 'success');
     clearEntrada();
@@ -161,7 +177,7 @@ async function saida() {
 
   if (!placa) { showResult('saida-result', 'Informe a placa do veículo.', 'error'); return; }
 
-  const res = await window.api.registrarSaida(placa);
+  const res = await api.registrarSaida(placa);
 
   if (res.success) {
     infoBox.innerHTML = `
@@ -192,7 +208,7 @@ document.getElementById('patio-tbody').addEventListener('click', e => {
 });
 
 async function loadPatio() {
-  const res      = await window.api.listarVeiculosNoPatio();
+  const res      = await api.listarVeiculosNoPatio();
   const tbody    = document.getElementById('patio-tbody');
   const emptyEl  = document.getElementById('patio-empty');
 
@@ -210,7 +226,7 @@ async function loadPatio() {
     const diffMs  = agora - new Date(v.entrada).getTime();
     const horas   = Math.floor(diffMs / 3_600_000);
     const minutos = Math.floor((diffMs % 3_600_000) / 60_000);
-    const fotoRes = await window.api.getFotosVeiculo(v.placa);
+    const fotoRes = await api.getFotosVeiculo(v.placa);
     const fotos = (fotoRes.success && fotoRes.data?.length) ? fotoRes.data : [];
     const fotoCell = fotos.length
       ? fotos.map(f => `<img src="data:image/jpeg;base64,${f}" class="foto-thumb" data-foto="${f}" title="Ver foto">`).join('')
@@ -237,7 +253,7 @@ async function loadPatio() {
 
 async function saidaRapida(placa) {
   if (!confirm(`Registrar saída do veículo ${placa}?`)) return;
-  const res = await window.api.registrarSaida(placa);
+  const res = await api.registrarSaida(placa);
   if (res.success) {
     alert(`✅ Saída de ${placa} registrada!\nTempo de estadia: ${res.data.tempoEstadia}`);
     loadPatio();
@@ -265,7 +281,7 @@ document.getElementById('btn-limpar').addEventListener('click', () => {
 });
 
 async function loadHistorico(filtros = {}) {
-  const res   = await window.api.buscarHistorico({ ...filtros, limit: 200 });
+  const res   = await api.buscarHistorico({ ...filtros, limit: 200 });
   const tbody = document.getElementById('historico-tbody');
 
   if (!res.success || !res.data.length) {

@@ -1,62 +1,25 @@
-import { app, BrowserWindow, dialog } from 'electron';
+import express from 'express';
 import path from 'path';
 import { initDatabase } from './database';
-import { registerIpcHandlers } from './ipcHandlers';
+import { registerRoutes } from './routes';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Janela principal
-// ─────────────────────────────────────────────────────────────────────────────
+const PORT = parseInt(process.env.PORT || '3000');
 
-let mainWindow: BrowserWindow | null = null;
+async function main() {
+  await initDatabase();
 
-function createWindow(): void {
-  mainWindow = new BrowserWindow({
-    width:    1280,
-    height:   820,
-    minWidth:  960,
-    minHeight: 640,
-    title:    'Pátio de Carros',
-    webPreferences: {
-      preload:          path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration:  false,
-    },
+  const app = express();
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.static(path.join(__dirname, '../../src/renderer')));
+
+  registerRoutes(app);
+
+  app.listen(PORT, () => {
+    console.log(`✅ Servidor rodando em http://localhost:${PORT}`);
   });
-
-  // HTML do renderer está em src/renderer/ (não compilado, só servido como arquivo)
-  mainWindow.loadFile(path.join(app.getAppPath(), 'src', 'renderer', 'index.html'));
-
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.webContents.openDevTools({ mode: 'bottom' });
-  }
-
-  mainWindow.on('closed', () => { mainWindow = null; });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Inicialização
-// ─────────────────────────────────────────────────────────────────────────────
-
-app.whenReady().then(async () => {
-  try {
-    await initDatabase();
-  } catch (err: any) {
-    dialog.showErrorBox(
-      'Erro de Banco de Dados',
-      `Não foi possível conectar ao MySQL.\n\nVerifique as configurações no arquivo .env\n\n${err.message}`
-    );
-    app.quit();
-    return;
-  }
-
-  registerIpcHandlers();
-  createWindow();
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
-});
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+main().catch(err => {
+  console.error('Erro fatal:', err.message);
+  process.exit(1);
 });
