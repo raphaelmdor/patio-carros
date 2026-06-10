@@ -1,0 +1,25 @@
+{
+  "name": "patio-carros",
+  "version": "1.0.0",
+  "description": "Sistema de controle de pátio de carros com integração DETRAN",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && electron .",
+    "dev": "concurrently \"tsc --watch\" \"wait-on dist/main/index.js && electron .\"",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "dotenv": "^16.4.0",
+    "electron": "^30.0.0",
+    "mysql2": "^3.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "concurrently": "^8.2.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.4.0",
+    "wait-on": "^7.2.0"
+  }
+}
