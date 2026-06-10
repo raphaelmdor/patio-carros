@@ -10,12 +10,29 @@ dotenv.config();
 let pool: Pool;
 
 export async function initDatabase(): Promise<void> {
+  let connConfig: mysql.PoolOptions;
+
+  if (process.env.DATABASE_URL) {
+    const u = new URL(process.env.DATABASE_URL);
+    connConfig = {
+      host:     u.hostname,
+      port:     parseInt(u.port || '3306'),
+      user:     u.username,
+      password: decodeURIComponent(u.password),
+      database: u.pathname.slice(1),
+    };
+  } else {
+    connConfig = {
+      host:     process.env.DB_HOST     || 'localhost',
+      port:     parseInt(process.env.DB_PORT || '3306'),
+      user:     process.env.DB_USER     || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_NAME     || 'patio_carros',
+    };
+  }
+
   pool = mysql.createPool({
-    host:             process.env.DB_HOST     || 'localhost',
-    port:             parseInt(process.env.DB_PORT || '3306'),
-    user:             process.env.DB_USER     || 'root',
-    password:         process.env.DB_PASSWORD || '',
-    database:         process.env.DB_NAME     || 'patio_carros',
+    ...connConfig,
     waitForConnections: true,
     connectionLimit:  10,
     queueLimit:       0,
