@@ -107,7 +107,21 @@ async function consultarDetran() {
   if (check.data?.noPatio) { mostrarAlerta(alerta, 'aviso', '⚠️ Este veículo já está no pátio.'); }
 
   dadosDetranAtual = detran.data;
-  document.getElementById('entrada-campos').innerHTML = camposVeiculoHTML(detran.data);
+  const d = detran.data;
+
+  // Preenche campos editáveis
+  document.getElementById('entrada-marca').value        = d.marca        || '';
+  document.getElementById('entrada-modelo').value       = d.modelo       || '';
+  document.getElementById('entrada-cor').value          = d.cor          || '';
+  document.getElementById('entrada-ano').value          = d.ano          || '';
+  document.getElementById('entrada-proprietario').value = d.proprietario || '';
+
+  // Se dados incompletos, avisa para preencher manualmente
+  const semDados = !d.marca && !d.modelo;
+  if (semDados && !check.data?.noPatio) {
+    mostrarAlerta(alerta, 'aviso', '⚠️ Placa não encontrada no DETRAN. Preencha os dados manualmente.');
+  }
+
   document.getElementById('btn-entrada').disabled = check.data?.noPatio ?? false;
   dadosDiv.classList.remove('hidden');
 }
@@ -117,9 +131,14 @@ async function registrarEntrada() {
   setBtnLoading('btn-entrada', true);
 
   const body = {
-    ...dadosDetranAtual,
-    vaga:       document.getElementById('entrada-vaga').value.trim() || undefined,
-    observacao: document.getElementById('entrada-obs').value.trim()  || undefined,
+    placa:       dadosDetranAtual.placa,
+    marca:       document.getElementById('entrada-marca').value.trim()        || undefined,
+    modelo:      document.getElementById('entrada-modelo').value.trim()       || undefined,
+    cor:         document.getElementById('entrada-cor').value.trim()          || undefined,
+    ano:         parseInt(document.getElementById('entrada-ano').value) || undefined,
+    proprietario: document.getElementById('entrada-proprietario').value.trim() || undefined,
+    vaga:        document.getElementById('entrada-vaga').value.trim()         || undefined,
+    observacao:  document.getElementById('entrada-obs').value.trim()          || undefined,
   };
 
   const { success, error } = await api('POST', '/api/entrada', body);
@@ -128,9 +147,14 @@ async function registrarEntrada() {
   if (!success) { mostrarAlerta(document.getElementById('entrada-alerta'), 'erro', error); return; }
 
   // Reset form
-  document.getElementById('entrada-placa').value = '';
-  document.getElementById('entrada-vaga').value  = '';
-  document.getElementById('entrada-obs').value   = '';
+  document.getElementById('entrada-placa').value        = '';
+  document.getElementById('entrada-marca').value        = '';
+  document.getElementById('entrada-modelo').value       = '';
+  document.getElementById('entrada-cor').value          = '';
+  document.getElementById('entrada-ano').value          = '';
+  document.getElementById('entrada-proprietario').value = '';
+  document.getElementById('entrada-vaga').value         = '';
+  document.getElementById('entrada-obs').value          = '';
   document.getElementById('entrada-dados').classList.add('hidden');
   document.getElementById('entrada-alerta').className = 'alerta hidden';
   dadosDetranAtual = null;

@@ -98,12 +98,13 @@ function mockConsultarPlaca(placa: string): DadosVeiculo {
   return (
     MOCK_DATA[placa] ?? {
       placa,
-      marca: '—',
-      modelo: '(Placa não encontrada no mock)',
-      cor: '—',
+      marca: '',
+      modelo: '',
+      cor: '',
       ano: 0,
-      municipio: '—',
-      uf: '—',
+      municipio: '',
+      uf: '',
+      proprietario: '',
     }
   );
 }
