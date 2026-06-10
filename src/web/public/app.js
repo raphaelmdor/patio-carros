@@ -19,8 +19,15 @@ function navTo(page) {
 async function api(method, path, body) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
   if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(path, opts);
-  return r.json();
+  try {
+    const r = await fetch(path, opts);
+    if (!r.ok && r.headers.get('content-type')?.includes('application/json') === false) {
+      return { success: false, error: `Servidor retornou ${r.status}` };
+    }
+    return r.json();
+  } catch (e) {
+    return { success: false, error: 'Sem conexão com o servidor' };
+  }
 }
 
 /* ── Status dot ── */
@@ -39,7 +46,13 @@ async function checarStatus() {
 
 async function carregarDashboard() {
   const { success, data, error } = await api('GET', '/api/dashboard');
-  if (!success) { toast('Erro: ' + error); return; }
+  if (!success) {
+    document.getElementById('stat-patio').textContent  = '—';
+    document.getElementById('stat-hoje').textContent   = '—';
+    document.getElementById('stat-total').textContent  = '—';
+    document.getElementById('dashboard-list').innerHTML = `<div class="loading-msg" style="color:var(--red)">⚠️ ${error}</div>`;
+    return;
+  }
 
   document.getElementById('stat-patio').textContent  = data.stats.veiculosNoPatio;
   document.getElementById('stat-hoje').textContent   = data.stats.movimentacoesHoje;

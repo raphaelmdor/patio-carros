@@ -19,7 +19,8 @@ export async function initDatabase(): Promise<void> {
     waitForConnections: true,
     connectionLimit:  10,
     queueLimit:       0,
-    timezone:         '-03:00',
+    timezone:         'local',
+    charset:          'utf8mb4',
   });
 
   const conn = await pool.getConnection();
