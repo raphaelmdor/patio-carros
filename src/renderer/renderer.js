@@ -120,6 +120,7 @@ document.getElementById('btn-registrar-entrada').addEventListener('click', async
     proprietario: val('entrada-proprietario'),
     vaga:         val('entrada-vaga'),
     observacao:   val('entrada-obs'),
+    fotosBase64:  fotosBase64Atual.length ? fotosBase64Atual : undefined,
   };
 
   const res = await window.api.registrarEntrada(dados);
@@ -136,6 +137,8 @@ function clearEntrada() {
   ['entrada-placa','entrada-marca','entrada-modelo','entrada-cor',
    'entrada-ano','entrada-proprietario','entrada-vaga','entrada-obs'].forEach(id => setVal(id, ''));
   setHint('', '');
+  fotosBase64Atual = [];
+  renderFotosGrid();
 }
 
 function setHint(msg, cls) {
@@ -181,6 +184,13 @@ async function saida() {
 
 document.getElementById('btn-refresh-patio').addEventListener('click', loadPatio);
 
+document.getElementById('patio-tbody').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-placa]');
+  if (btn) { saidaRapida(btn.dataset.placa); return; }
+  const img = e.target.closest('img[data-foto]');
+  if (img) { abrirFoto(img.dataset.foto); }
+});
+
 async function loadPatio() {
   const res      = await window.api.listarVeiculosNoPatio();
   const tbody    = document.getElementById('patio-tbody');
@@ -196,13 +206,19 @@ async function loadPatio() {
   emptyEl.classList.add('hidden');
   const agora = Date.now();
 
-  tbody.innerHTML = res.data.map(v => {
+  const rows = await Promise.all(res.data.map(async v => {
     const diffMs  = agora - new Date(v.entrada).getTime();
     const horas   = Math.floor(diffMs / 3_600_000);
     const minutos = Math.floor((diffMs % 3_600_000) / 60_000);
+    const fotoRes = await window.api.getFotosVeiculo(v.placa);
+    const fotos = (fotoRes.success && fotoRes.data?.length) ? fotoRes.data : [];
+    const fotoCell = fotos.length
+      ? fotos.map(f => `<img src="data:image/jpeg;base64,${f}" class="foto-thumb" data-foto="${f}" title="Ver foto">`).join('')
+      : '—';
 
     return `
       <tr>
+        <td>${fotoCell}</td>
         <td><strong>${v.placa}</strong></td>
         <td>${v.marca || ''} ${v.modelo || ''}</td>
         <td>${v.cor || '—'}</td>
@@ -211,14 +227,12 @@ async function loadPatio() {
         <td>${horas}h ${minutos}min</td>
         <td>${v.vaga || '—'}</td>
         <td>
-          <button class="btn btn-danger btn-sm"
-                  onclick="saidaRapida('${v.placa}')">
-            Saída
-          </button>
+          <button class="btn btn-danger btn-sm" data-placa="${v.placa}">Saída</button>
         </td>
       </tr>
     `;
-  }).join('');
+  }));
+  tbody.innerHTML = rows.join('');
 }
 
 async function saidaRapida(placa) {
@@ -292,5 +306,69 @@ function showResult(id, msg, type) {
   setTimeout(() => el.classList.remove('show'), 6000);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// FOTO
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let fotosBase64Atual = [];
+
+document.getElementById('modal-foto').addEventListener('click', function () {
+  this.classList.add('hidden');
+});
+
+document.getElementById('entrada-foto').addEventListener('change', function () {
+  const files = Array.from(this.files);
+  if (!files.length) return;
+
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const dataUrl = e.target.result;
+      const b64 = dataUrl.split(',')[1];
+      fotosBase64Atual.push(b64);
+      renderFotosGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  this.value = '';
+});
+
+function renderFotosGrid() {
+  const grid = document.getElementById('fotos-grid');
+  const fotos = fotosBase64Atual.map((b64, i) => `
+    <div class="foto-item">
+      <img src="data:image/jpeg;base64,${b64}" data-index="${i}" title="Ver foto">
+      <button class="btn-del-foto" data-index="${i}" title="Remover">✕</button>
+    </div>
+  `).join('');
+
+  const addBtn = `
+    <label for="entrada-foto" class="foto-placeholder foto-placeholder-sm">
+      <span class="foto-icon">📷</span>
+      <span>${fotosBase64Atual.length ? '+' : 'Adicionar fotos'}</span>
+    </label>
+  `;
+
+  grid.innerHTML = fotos + addBtn;
+}
+
+document.getElementById('fotos-grid').addEventListener('click', e => {
+  const del = e.target.closest('.btn-del-foto');
+  if (del) {
+    fotosBase64Atual.splice(parseInt(del.dataset.index), 1);
+    renderFotosGrid();
+    return;
+  }
+  const img = e.target.closest('img[data-index]');
+  if (img) abrirFoto(fotosBase64Atual[parseInt(img.dataset.index)]);
+});
+
+function abrirFoto(base64) {
+  document.getElementById('modal-foto-img').src = `data:image/jpeg;base64,${base64}`;
+  document.getElementById('modal-foto').classList.remove('hidden');
+}
+
 // ─── Inicialização ────────────────────────────────────────────────────────────
+renderFotosGrid();
 loadDashboard();

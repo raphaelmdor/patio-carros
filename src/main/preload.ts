@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld('api', {
   listarVeiculosNoPatio: ()             => ipcRenderer.invoke('listar-veiculos-patio'),
   buscarHistorico:     (filtros: unknown) => ipcRenderer.invoke('buscar-historico', filtros),
   getDashboard:        ()               => ipcRenderer.invoke('get-dashboard'),
+  getFotosVeiculo:     (placa: string)  => ipcRenderer.invoke('get-fotos-veiculo', placa),
 });

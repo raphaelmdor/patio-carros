@@ -5,6 +5,7 @@ import {
   listarVeiculosNoPatio,
   buscarHistorico,
   getDashboard,
+  getFotosVeiculo,
   EntradaInput,
   FiltroBusca,
 } from './database';
@@ -89,6 +90,16 @@ export function registerIpcHandlers(): void {
       return ok(data);
     } catch (err: any) {
       return fail(err.message ?? 'Erro ao carregar dashboard');
+    }
+  });
+
+  // ── Fotos do veículo ───────────────────────────────────────────────────────
+  ipcMain.handle('get-fotos-veiculo', async (_event, placa: string) => {
+    try {
+      const fotos = await getFotosVeiculo(placa);
+      return ok(fotos);
+    } catch (err: any) {
+      return fail(err.message ?? 'Erro ao buscar fotos');
     }
   });
 }

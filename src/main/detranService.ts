@@ -49,7 +49,7 @@ export async function consultarPlaca(placa: string): Promise<DadosVeiculo | null
   }
 
   try {
-    const response = await axios.get(`${apiUrl}/${placaFormatada}`, {
+    const response = await axios.post(apiUrl, { tipo: 'fipe-chassi', placa: placaFormatada, homolog: false }, {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
@@ -57,22 +57,27 @@ export async function consultarPlaca(placa: string): Promise<DadosVeiculo | null
       timeout: 8000,
     });
 
-    const d = response.data;
+    if (response.data?.error) return null;
 
-    // Normaliza campos — cada provedor tem nomes diferentes
+    // Pega o resultado principal (principal: true) ou o primeiro
+    const resultados: any[] = response.data?.data?.resultados ?? [];
+    if (!resultados.length) return null;
+
+    const d = resultados.find((r: any) => r.principal) ?? resultados[0];
+
     return {
       placa:        placaFormatada,
-      marca:        d.marca        ?? d.MARCA        ?? '',
-      modelo:       d.modelo       ?? d.MODELO       ?? d.subModelo ?? '',
-      cor:          d.cor          ?? d.COR          ?? d.cor_veiculo ?? '',
-      ano:          parseInt(d.ano ?? d.ANO ?? d.anoModelo ?? '0'),
-      municipio:    d.municipio    ?? d.MUNICIPIO    ?? '',
-      uf:           d.uf           ?? d.UF           ?? '',
-      proprietario: d.proprietario ?? d.NOME         ?? d.nome ?? '',
+      marca:        d.marca   ?? '',
+      modelo:       d.modelo  ?? '',
+      cor:          d.cor     ?? '',
+      ano:          d.anoFabricacao ?? 0,
+      municipio:    '',
+      uf:           '',
+      proprietario: '',
     };
   } catch (error: any) {
     if (error.response?.status === 404) return null;
-    console.error('Erro na API DETRAN:', error.message);
+    console.error('Erro na API DETRAN:', error.message, error.response?.data);
     throw new Error('Falha ao consultar API do DETRAN');
   }
 }

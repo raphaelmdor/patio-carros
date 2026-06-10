@@ -51,9 +51,21 @@ async function createTablesIfNotExist(): Promise<void> {
         proprietario  VARCHAR(120),
         municipio     VARCHAR(100),
         uf            VARCHAR(2),
+        foto          MEDIUMBLOB,
         created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY uq_placa (placa)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS veiculo_fotos (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        veiculo_id INT NOT NULL,
+        foto       MEDIUMBLOB NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (veiculo_id) REFERENCES veiculos(id) ON DELETE CASCADE,
+        INDEX idx_veiculo_foto (veiculo_id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
 
@@ -91,6 +103,7 @@ export interface DadosVeiculoInput {
   proprietario?: string;
   municipio?: string;
   uf?: string;
+  fotosBase64?: string[];
 }
 
 /** Insere o veículo ou atualiza os dados se já existir. Retorna o ID. */
@@ -112,11 +125,24 @@ export async function upsertVeiculo(dados: DadosVeiculoInput): Promise<number> {
   );
 
   const { insertId } = result as any;
-  if (insertId > 0) return insertId;
+  let veiculoId: number;
+  if (insertId > 0) {
+    veiculoId = insertId;
+  } else {
+    const [rows] = await pool.execute<any[]>('SELECT id FROM veiculos WHERE placa = ?', [dados.placa]);
+    veiculoId = rows[0].id;
+  }
 
-  // ON DUPLICATE KEY — busca o ID existente
-  const [rows] = await pool.execute<any[]>('SELECT id FROM veiculos WHERE placa = ?', [dados.placa]);
-  return rows[0].id;
+  if (dados.fotosBase64?.length) {
+    for (const b64 of dados.fotosBase64) {
+      await pool.execute(
+        'INSERT INTO veiculo_fotos (veiculo_id, foto) VALUES (?, ?)',
+        [veiculoId, Buffer.from(b64, 'base64')]
+      );
+    }
+  }
+
+  return veiculoId;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -250,6 +276,20 @@ export async function buscarHistorico(filtros: FiltroBusca): Promise<any[]> {
 
   const [rows] = await pool.execute<any[]>(query, params);
   return rows;
+}
+
+export async function getFotosVeiculo(placa: string): Promise<string[]> {
+  const [veiculoRows] = await pool.execute<any[]>(
+    'SELECT id FROM veiculos WHERE placa = ?',
+    [placa.toUpperCase()]
+  );
+  if (!veiculoRows.length) return [];
+
+  const [rows] = await pool.execute<any[]>(
+    'SELECT foto FROM veiculo_fotos WHERE veiculo_id = ? ORDER BY created_at ASC',
+    [veiculoRows[0].id]
+  );
+  return rows.map(r => (r.foto as Buffer).toString('base64'));
 }
 
 export async function getDashboard(): Promise<Record<string, number>> {
