@@ -241,6 +241,54 @@ async function saida() {
   }
 }
 
+// ─── Toggle saída Veículos / Bens ─────────────────────────────────────────────
+
+document.querySelectorAll('.tipo-saida-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tipo-saida-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tipo = btn.dataset.tipo;
+    document.getElementById('saida-form-veiculo').classList.toggle('hidden', tipo !== 'veiculo');
+    document.getElementById('saida-form-bem').classList.toggle('hidden',     tipo !== 'bem');
+    if (tipo === 'bem') loadSaidaBens();
+  });
+});
+
+async function loadSaidaBens() {
+  const lista = document.getElementById('saida-bens-lista');
+  lista.innerHTML = '<p style="color:var(--txt2);padding:8px 0">Carregando...</p>';
+  const res = await _apiFetch('GET', '/api/bens/patio');
+  if (!res.success || !res.data.length) {
+    lista.innerHTML = '<p style="color:var(--txt2);padding:8px 0">Nenhum bem no pátio.</p>';
+    return;
+  }
+  lista.innerHTML = res.data.map(b => `
+    <div class="bem-saida-card">
+      <div class="bem-saida-info">
+        <strong>${b.tipo}</strong>${b.modelo ? ` — ${b.modelo}` : ''}
+        <span>${b.proprietario || '—'} · Vaga ${b.vaga || '—'} · desde ${fmtDate(b.entrada)}</span>
+      </div>
+      <button class="btn btn-danger btn-sm" data-bem-id="${b.id}" data-bem-desc="${b.tipo}">🚪 Saída</button>
+    </div>
+  `).join('');
+}
+
+document.getElementById('saida-bens-lista').addEventListener('click', async e => {
+  const btn = e.target.closest('button[data-bem-id]');
+  if (!btn) return;
+  const bemId = btn.dataset.bemId;
+  const desc  = btn.dataset.bemDesc;
+  if (!confirm(`Registrar saída do bem "${desc}"?`)) return;
+  const res = await _apiFetch('POST', '/api/bens/saida', { id: parseInt(bemId) });
+  if (res.success) {
+    showResult('saida-bem-result', `✅ Saída registrada! Tempo de estadia: ${res.data.tempoEstadia}`, 'success');
+    loadSaidaBens();
+    loadDashboard();
+  } else {
+    showResult('saida-bem-result', `❌ ${res.error}`, 'error');
+  }
+});
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // PÁTIO ATUAL
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -254,7 +302,18 @@ document.getElementById('patio-tbody').addEventListener('click', e => {
   if (img) { abrirFoto(img.dataset.foto); }
 });
 
+document.getElementById('bens-patio-tbody').addEventListener('click', async e => {
+  const btn = e.target.closest('button[data-bem-id]');
+  if (btn) { saidaRapidaBem(parseInt(btn.dataset.bemId), btn.dataset.bemDesc); return; }
+  const row = e.target.closest('tr[data-bem-id]');
+  if (row) { abrirModalBem(parseInt(row.dataset.bemId)); }
+});
+
 async function loadPatio() {
+  await Promise.all([loadPatioVeiculos(), loadPatioBens()]);
+}
+
+async function loadPatioVeiculos() {
   const res      = await api.listarVeiculosNoPatio();
   const tbody    = document.getElementById('patio-tbody');
   const emptyEl  = document.getElementById('patio-empty');
@@ -289,9 +348,49 @@ async function loadPatio() {
         <td>${fmtDate(v.entrada)}</td>
         <td>${horas}h ${minutos}min</td>
         <td>${v.vaga || '—'}</td>
-        <td>
-          <button class="btn btn-danger btn-sm" data-placa="${v.placa}">Saída</button>
-        </td>
+        <td><button class="btn btn-danger btn-sm" data-placa="${v.placa}">Saída</button></td>
+      </tr>
+    `;
+  }));
+  tbody.innerHTML = rows.join('');
+}
+
+async function loadPatioBens() {
+  const res     = await _apiFetch('GET', '/api/bens/patio');
+  const tbody   = document.getElementById('bens-patio-tbody');
+  const emptyEl = document.getElementById('bens-patio-empty');
+
+  tbody.innerHTML = '';
+
+  if (!res.success || !res.data.length) {
+    emptyEl.classList.remove('hidden');
+    return;
+  }
+
+  emptyEl.classList.add('hidden');
+  const agora = Date.now();
+
+  const rows = await Promise.all(res.data.map(async b => {
+    const diffMs  = Math.max(0, agora - new Date(b.entrada).getTime());
+    const horas   = Math.floor(diffMs / 3_600_000);
+    const minutos = Math.floor((diffMs % 3_600_000) / 60_000);
+    const fotoRes = await _apiFetch('GET', `/api/bens/${b.id}`);
+    const fotos   = (fotoRes.success && fotoRes.data?.fotos?.length) ? fotoRes.data.fotos : [];
+    const fotoCell = fotos.length
+      ? fotos.map(f => `<img src="data:image/jpeg;base64,${f}" class="foto-thumb" data-foto="${f}" title="Ver foto">`).join('')
+      : '—';
+
+    return `
+      <tr class="row-clickable" data-bem-id="${b.id}">
+        <td>${fotoCell}</td>
+        <td><strong>${b.tipo}</strong></td>
+        <td>${b.modelo || '—'}</td>
+        <td>${b.cor || '—'}</td>
+        <td>${b.proprietario || '—'}</td>
+        <td>${fmtDate(b.entrada)}</td>
+        <td>${horas}h ${minutos}min</td>
+        <td>${b.vaga || '—'}</td>
+        <td><button class="btn btn-danger btn-sm" data-bem-id="${b.id}" data-bem-desc="${b.tipo}">Saída</button></td>
       </tr>
     `;
   }));
@@ -308,6 +407,53 @@ async function saidaRapida(placa) {
   } else {
     alert(`❌ Erro: ${res.error}`);
   }
+}
+
+async function saidaRapidaBem(bemId, desc) {
+  if (!confirm(`Registrar saída do bem "${desc}"?`)) return;
+  const res = await _apiFetch('POST', '/api/bens/saida', { id: bemId });
+  if (res.success) {
+    alert(`✅ Saída registrada!\nTempo de estadia: ${res.data.tempoEstadia}`);
+    loadPatio();
+    loadDashboard();
+  } else {
+    alert(`❌ Erro: ${res.error}`);
+  }
+}
+
+async function abrirModalBem(bemId) {
+  const modal = document.getElementById('modal-info');
+  const body  = document.getElementById('modal-info-body');
+  document.getElementById('modal-info-title').textContent = 'Detalhes do Bem';
+  body.innerHTML = '<p style="padding:18px;color:var(--txt2)">Carregando...</p>';
+  modal.classList.remove('hidden');
+
+  const res = await _apiFetch('GET', `/api/bens/${bemId}`);
+  if (!res.success) { body.innerHTML = `<p style="padding:18px;color:var(--red)">Erro: ${res.error}</p>`; return; }
+
+  const { bem, historico, fotos } = res.data;
+  const campo = (label, value) => value
+    ? `<div class="info-item"><span class="info-label">${label}</span><span class="info-val">${value}</span></div>`
+    : '';
+
+  const fotosHtml = fotos?.length
+    ? `<div class="info-fotos">${fotos.map(f => `<img src="data:image/jpeg;base64,${f}" class="foto-thumb" data-foto="${f}">`).join('')}</div>`
+    : '';
+
+  body.innerHTML = `
+    <div class="modal-info-body-inner">
+      <h4 class="info-section-title">Bem</h4>
+      <div class="info-grid">
+        ${campo('Tipo', bem?.tipo)} ${campo('Modelo', bem?.modelo)}
+        ${campo('Cor', bem?.cor)} ${campo('Proprietário', bem?.proprietario)}
+        ${campo('Vaga', bem?.vaga)}
+      </div>
+      ${fotosHtml}
+      <h4 class="info-section-title" style="margin-top:20px">Histórico de Movimentações</h4>
+      ${renderTimeline(historico)}
+    </div>
+  `;
+  body.querySelectorAll('img[data-foto]').forEach(img => img.addEventListener('click', () => abrirFoto(img.dataset.foto)));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -398,9 +544,13 @@ document.getElementById('historico-tbody').addEventListener('click', async e => 
   body.innerHTML = '<p style="padding:18px;color:var(--txt2)">Carregando...</p>';
   modal.classList.remove('hidden');
 
-  const res = await _apiFetch('GET', `/api/veiculo/${encodeURIComponent(placa)}`);
-  const v   = res.success ? res.data.veiculo : null;
-  const fotos = (res.success && res.data.fotos?.length) ? res.data.fotos : [];
+  const [veicRes, histRes] = await Promise.all([
+    _apiFetch('GET', `/api/veiculo/${encodeURIComponent(placa)}`),
+    _apiFetch('GET', `/api/veiculo/${encodeURIComponent(placa)}/historico`),
+  ]);
+  const v   = veicRes.success ? veicRes.data.veiculo : null;
+  const fotos = (veicRes.success && veicRes.data.fotos?.length) ? veicRes.data.fotos : [];
+  const historico = histRes.success ? histRes.data : [];
 
   const campo = (label, value) => value
     ? `<div class="info-item"><span class="info-label">${label}</span><span class="info-val">${value}</span></div>`
@@ -412,15 +562,6 @@ document.getElementById('historico-tbody').addEventListener('click', async e => 
 
   body.innerHTML = `
     <div class="modal-info-body-inner">
-      <h4 class="info-section-title">Movimentação</h4>
-      <div class="info-grid">
-        ${campo('Tipo', `<span class="badge badge-${tipo}">${tipo}</span>`)}
-        ${campo('Data / Hora', fmtDate(hora))}
-        ${campo('Vaga', vaga || '—')}
-        ${campo('Valor', valor ? `R$ ${parseFloat(valor).toFixed(2)}` : '—')}
-        ${obs ? campo('Observação', obs) : ''}
-      </div>
-
       <h4 class="info-section-title">Veículo</h4>
       <div class="info-grid">
         ${campo('Placa', placa)}
@@ -430,10 +571,11 @@ document.getElementById('historico-tbody').addEventListener('click', async e => 
         ${v ? campo('Ano', v.ano) : ''}
         ${v ? campo('Proprietário', v.proprietario) : ''}
         ${v ? campo('Município / UF', v.municipio ? `${v.municipio} / ${v.uf}` : v.uf) : ''}
-        ${v ? campo('Cadastrado em', fmtDate(v.created_at)) : ''}
       </div>
-
       ${fotosHtml}
+
+      <h4 class="info-section-title" style="margin-top:20px">Histórico de Movimentações</h4>
+      ${renderTimeline(historico)}
     </div>
   `;
 
@@ -441,6 +583,37 @@ document.getElementById('historico-tbody').addEventListener('click', async e => 
     img.addEventListener('click', () => abrirFoto(img.dataset.foto));
   });
 });
+
+function renderTimeline(movs) {
+  if (!movs?.length) return '<p style="color:var(--txt2);font-size:13px">Nenhuma movimentação registrada.</p>';
+
+  let html = '<div class="timeline">';
+  for (let i = 0; i < movs.length; i++) {
+    const m = movs[i];
+    const isEntrada = m.tipo === 'entrada';
+    const next = movs[i + 1];
+    let duracao = '';
+    if (isEntrada && next && next.tipo === 'saida') {
+      const ms = new Date(next.data_hora).getTime() - new Date(m.data_hora).getTime();
+      const h  = Math.floor(ms / 3_600_000);
+      const min = Math.floor((ms % 3_600_000) / 60_000);
+      duracao = `<span class="tl-dur">${h}h ${min}min de estadia</span>`;
+    }
+    html += `
+      <div class="tl-item tl-${m.tipo}">
+        <span class="tl-dot"></span>
+        <div class="tl-content">
+          <span class="tl-badge badge badge-${m.tipo}">${m.tipo}</span>
+          <span class="tl-hora">${fmtDate(m.data_hora)}</span>
+          ${m.vaga ? `<span class="tl-vaga">Vaga ${m.vaga}</span>` : ''}
+          ${duracao}
+        </div>
+      </div>
+    `;
+  }
+  html += '</div>';
+  return html;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Utilitários

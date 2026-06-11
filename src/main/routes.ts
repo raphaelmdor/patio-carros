@@ -8,7 +8,13 @@ import {
   getDashboard,
   getFotosVeiculo,
   getVeiculoCompleto,
+  getHistoricoVeiculo,
   registrarEntradaBem,
+  getBemById,
+  getFotosBem,
+  listarBensNoPatio,
+  registrarSaidaBem,
+  getHistoricoBem,
   EntradaInput,
   FiltroBusca,
   BemInput,
@@ -81,6 +87,13 @@ export function registerRoutes(app: Express): void {
     catch (e: any) { res.json(fail(e.message ?? 'Erro ao buscar fotos')); }
   });
 
+  app.get('/api/veiculo/:placa/historico', async (req: Request, res: Response) => {
+    try {
+      const placa = req.params.placa.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      res.json(ok(await getHistoricoVeiculo(placa)));
+    } catch (e: any) { res.json(fail(e.message ?? 'Erro')); }
+  });
+
   app.get('/api/veiculo/:placa', async (req: Request, res: Response) => {
     try {
       const placa = req.params.placa.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -95,6 +108,33 @@ export function registerRoutes(app: Express): void {
   app.get('/api/veiculos', async (_req: Request, res: Response) => {
     try { res.json(ok(await listarTodosVeiculos())); }
     catch (e: any) { res.json(fail(e.message ?? 'Erro ao listar veículos')); }
+  });
+
+  app.get('/api/bens/patio', async (_req: Request, res: Response) => {
+    try { res.json(ok(await listarBensNoPatio())); }
+    catch (e: any) { res.json(fail(e.message ?? 'Erro')); }
+  });
+
+  app.get('/api/bens/:id', async (req: Request, res: Response) => {
+    try {
+      const bemId = parseInt(req.params.id);
+      const [bem, historico, fotos] = await Promise.all([
+        getBemById(bemId),
+        getHistoricoBem(bemId),
+        getFotosBem(bemId),
+      ]);
+      res.json(ok({ bem, historico, fotos }));
+    } catch (e: any) { res.json(fail(e.message ?? 'Erro')); }
+  });
+
+  app.post('/api/bens/saida', async (req: Request, res: Response) => {
+    try {
+      const bemId = parseInt(req.body.id);
+      if (!bemId) { res.json(fail('ID do bem é obrigatório')); return; }
+      const resultado = await registrarSaidaBem(bemId);
+      if (!resultado) { res.json(fail('Bem não encontrado no pátio')); return; }
+      res.json(ok(resultado));
+    } catch (e: any) { res.json(fail(e.message ?? 'Erro')); }
   });
 
   app.post('/api/bens/entrada', async (req: Request, res: Response) => {

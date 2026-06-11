@@ -186,28 +186,44 @@
     <!-- Saída -->
     <section id="tab-saida" class="tab-content">
       <h2>Registrar Saída</h2>
-      <div class="form-card" style="max-width:480px">
-        <div class="form-group">
-          <label>Placa do Veículo</label>
-          <div class="placa-row">
-            <input id="saida-placa" type="text" class="input-placa"
-                   placeholder="ABC1234" maxlength="8" autocomplete="off">
-            <button id="btn-registrar-saida" class="btn btn-danger">
-              🚪 Registrar Saída
-            </button>
+
+      <div class="tipo-selector">
+        <button class="tipo-saida-btn active" data-tipo="veiculo">🚗 Veículos</button>
+        <button class="tipo-saida-btn"        data-tipo="bem">📦 Bens</button>
+      </div>
+
+      <div id="saida-form-veiculo">
+        <div class="form-card" style="max-width:480px">
+          <div class="form-group">
+            <label>Placa do Veículo</label>
+            <div class="placa-row">
+              <input id="saida-placa" type="text" class="input-placa"
+                     placeholder="ABC1234" maxlength="8" autocomplete="off">
+              <button id="btn-registrar-saida" class="btn btn-danger">
+                🚪 Registrar Saída
+              </button>
+            </div>
           </div>
+          <div id="saida-info" class="info-box hidden"></div>
+          <div id="saida-result" class="result-msg"></div>
         </div>
-        <div id="saida-info" class="info-box hidden"></div>
-        <div id="saida-result" class="result-msg"></div>
+      </div>
+
+      <div id="saida-form-bem" class="hidden">
+        <p class="saida-bens-hint">Selecione o bem que deseja dar saída:</p>
+        <div id="saida-bens-lista"></div>
+        <div id="saida-bem-result" class="result-msg"></div>
       </div>
     </section>
 
     <!-- Pátio Atual -->
     <section id="tab-patio" class="tab-content">
       <div class="section-header">
-        <h2>Veículos no Pátio</h2>
+        <h2>Pátio Atual</h2>
         <button id="btn-refresh-patio" class="btn btn-secondary btn-sm">🔄 Atualizar</button>
       </div>
+
+      <h3 class="patio-subtitulo">🚗 Veículos</h3>
       <div class="table-wrap">
         <table id="patio-table">
           <thead><tr>
@@ -219,7 +235,22 @@
       </div>
       <div id="patio-empty" class="empty-state hidden">
         <div class="empty-icon">🅿️</div>
-        <p>Pátio vazio no momento</p>
+        <p>Nenhum veículo no pátio</p>
+      </div>
+
+      <h3 class="patio-subtitulo" style="margin-top:28px">📦 Bens</h3>
+      <div class="table-wrap">
+        <table id="bens-patio-table">
+          <thead><tr>
+            <th>Foto</th><th>Tipo</th><th>Modelo</th><th>Cor</th>
+            <th>Proprietário</th><th>Entrada</th><th>Tempo</th><th>Vaga</th><th>Ação</th>
+          </tr></thead>
+          <tbody id="bens-patio-tbody"></tbody>
+        </table>
+      </div>
+      <div id="bens-patio-empty" class="empty-state hidden">
+        <div class="empty-icon">📦</div>
+        <p>Nenhum bem no pátio</p>
       </div>
     </section>
 

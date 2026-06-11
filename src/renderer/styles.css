@@ -398,6 +398,54 @@ tr.row-clickable:hover td { background: rgba(88,166,255,.09); }
 .info-fotos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 .info-fotos .foto-thumb { width: 90px; height: 70px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); }
 
+/* ─── Timeline de movimentações ─────────────────────────────────────────── */
+.timeline { display: flex; flex-direction: column; gap: 0; padding: 4px 0; }
+.tl-item  { display: flex; align-items: flex-start; gap: 12px; position: relative; padding: 0 0 16px 0; }
+.tl-item:last-child { padding-bottom: 0; }
+.tl-item::before {
+  content: '';
+  position: absolute;
+  left: 7px; top: 20px; bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+.tl-item:last-child::before { display: none; }
+.tl-dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--bg1);
+  flex-shrink: 0;
+  margin-top: 2px;
+  z-index: 1;
+}
+.tl-entrada .tl-dot { border-color: var(--green); background: rgba(63,185,80,.15); }
+.tl-saida   .tl-dot { border-color: var(--red);   background: rgba(248,81,73,.15); }
+.tl-content { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tl-badge   { font-size: 11px; }
+.tl-hora    { font-size: 13px; color: var(--txt1); }
+.tl-vaga    { font-size: 12px; color: var(--txt2); background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 7px; }
+.tl-dur     { font-size: 12px; color: var(--txt2); font-style: italic; }
+
+/* ─── Pátio subtítulo ────────────────────────────────────────────────────── */
+.patio-subtitulo { font-size: 13px; font-weight: 600; color: var(--txt2); text-transform: uppercase; letter-spacing: .4px; margin: 0 0 10px; }
+
+/* ─── Bem saída card ─────────────────────────────────────────────────────── */
+.saida-bens-hint { font-size: 13px; color: var(--txt2); margin-bottom: 12px; }
+.bem-saida-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  gap: 12px;
+}
+.bem-saida-info { display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+.bem-saida-info span { font-size: 12px; color: var(--txt2); }
+
 /* ─── Histórico info ────────────────────────────────────────────────────── */
 .historico-info {
   font-size: 12px;

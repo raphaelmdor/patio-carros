@@ -124,6 +124,18 @@ async function createTablesIfNotExist(): Promise<void> {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
 
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS bens_movimentacoes (
+        id        INT AUTO_INCREMENT PRIMARY KEY,
+        bem_id    INT NOT NULL,
+        tipo      ENUM('entrada', 'saida') NOT NULL,
+        data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (bem_id) REFERENCES bens(id) ON DELETE CASCADE,
+        INDEX idx_bem (bem_id),
+        INDEX idx_data (data_hora)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+
     console.log('✅ Tabelas prontas');
   } finally {
     conn.release();
@@ -150,6 +162,11 @@ export async function registrarEntradaBem(dados: BemInput): Promise<number> {
   );
   const bemId = (result as any).insertId;
 
+  await pool.execute(
+    `INSERT INTO bens_movimentacoes (bem_id, tipo) VALUES (?, 'entrada')`,
+    [bemId]
+  );
+
   if (dados.fotosBase64?.length) {
     for (const b64 of dados.fotosBase64) {
       await pool.execute(
@@ -160,6 +177,85 @@ export async function registrarEntradaBem(dados: BemInput): Promise<number> {
   }
 
   return bemId;
+}
+
+export async function getBemById(id: number): Promise<any | null> {
+  const [rows] = await pool.execute<any[]>(
+    'SELECT id, tipo, cor, modelo, proprietario, vaga, data_hora FROM bens WHERE id = ?',
+    [id]
+  );
+  return rows[0] ?? null;
+}
+
+export async function getFotosBem(bemId: number): Promise<string[]> {
+  const [rows] = await pool.execute<any[]>(
+    'SELECT foto FROM bens_fotos WHERE bem_id = ? ORDER BY created_at ASC',
+    [bemId]
+  );
+  return rows.map(r => (r.foto as Buffer).toString('base64'));
+}
+
+export async function listarBensNoPatio(): Promise<any[]> {
+  const [rows] = await pool.execute<any[]>(`
+    SELECT b.id, b.tipo, b.cor, b.modelo, b.proprietario, b.vaga,
+           bm.data_hora AS entrada
+    FROM bens_movimentacoes bm
+    JOIN bens b ON bm.bem_id = b.id
+    WHERE bm.tipo = 'entrada'
+      AND NOT EXISTS (
+        SELECT 1 FROM bens_movimentacoes bm2
+        WHERE bm2.bem_id = bm.bem_id AND bm2.tipo = 'saida' AND bm2.id > bm.id
+      )
+    ORDER BY bm.data_hora DESC
+  `);
+  return rows;
+}
+
+export interface SaidaBemResult {
+  tempoEstadia: string;
+  tempoMs: number;
+}
+
+export async function registrarSaidaBem(bemId: number): Promise<SaidaBemResult | null> {
+  const [rows] = await pool.execute<any[]>(`
+    SELECT id, data_hora FROM bens_movimentacoes
+    WHERE bem_id = ? AND tipo = 'entrada'
+      AND id > COALESCE((
+        SELECT MAX(id) FROM bens_movimentacoes WHERE bem_id = ? AND tipo = 'saida'
+      ), 0)
+    ORDER BY id DESC LIMIT 1
+  `, [bemId, bemId]);
+
+  if (!rows.length) return null;
+
+  await pool.execute(
+    `INSERT INTO bens_movimentacoes (bem_id, tipo) VALUES (?, 'saida')`,
+    [bemId]
+  );
+
+  const diffMs = Date.now() - new Date(rows[0].data_hora).getTime();
+  return {
+    tempoEstadia: `${Math.floor(diffMs / 3_600_000)}h ${Math.floor((diffMs % 3_600_000) / 60_000)}min`,
+    tempoMs: diffMs,
+  };
+}
+
+export async function getHistoricoVeiculo(placa: string): Promise<any[]> {
+  const [rows] = await pool.execute<any[]>(`
+    SELECT m.tipo, m.data_hora, m.vaga, m.valor_cobrado, m.observacao
+    FROM movimentacoes m JOIN veiculos v ON m.veiculo_id = v.id
+    WHERE v.placa = ?
+    ORDER BY m.data_hora ASC
+  `, [placa.toUpperCase()]);
+  return rows;
+}
+
+export async function getHistoricoBem(bemId: number): Promise<any[]> {
+  const [rows] = await pool.execute<any[]>(`
+    SELECT tipo, data_hora FROM bens_movimentacoes
+    WHERE bem_id = ? ORDER BY data_hora ASC
+  `, [bemId]);
+  return rows;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
