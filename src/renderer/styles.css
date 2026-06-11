@@ -464,7 +464,8 @@ tr.row-clickable:hover td { background: rgba(88,166,255,.09); }
   margin-bottom: 18px;
   gap: 2px;
 }
-.tipo-btn {
+.filters .tipo-selector { margin-bottom: 0; }
+.tipo-btn, .tipo-patio-btn {
   background: transparent;
   border: none;
   color: var(--txt2);
@@ -476,12 +477,13 @@ tr.row-clickable:hover td { background: rgba(88,166,255,.09); }
   transition: background .15s, color .15s;
   white-space: nowrap;
 }
-.tipo-btn.active {
+.tipo-btn.active, .tipo-patio-btn.active {
   background: var(--bg1);
   color: var(--txt1);
   box-shadow: 0 1px 4px rgba(0,0,0,.4);
 }
-.tipo-btn:not(.active):hover { color: var(--txt1); }
+.tipo-btn:not(.active):hover,
+.tipo-patio-btn:not(.active):hover { color: var(--txt1); }
 
 /* ─── Card clicável ─────────────────────────────────────────────────────── */
 .card-clickable {

@@ -261,6 +261,7 @@ document.querySelectorAll('.tipo-patio-btn').forEach(btn => {
 document.getElementById('btn-filtrar-patio').addEventListener('click', filtrarPatio);
 document.getElementById('btn-limpar-patio').addEventListener('click', () => {
   document.getElementById('patio-busca').value = '';
+  document.getElementById('patio-data').value  = '';
   filtrarPatio();
 });
 document.getElementById('patio-busca').addEventListener('keydown', e => {
@@ -270,6 +271,7 @@ document.getElementById('patio-busca').addEventListener('keydown', e => {
 function filtrarPatio() {
   const tipo  = document.querySelector('.tipo-patio-btn.active')?.dataset.tipo || 'veiculo';
   const texto = (document.getElementById('patio-busca').value || '').toLowerCase().trim();
+  const data  = (document.getElementById('patio-data')?.value || '').trim();
 
   document.getElementById('patio-secao-veiculo').classList.toggle('hidden', tipo !== 'veiculo');
   document.getElementById('patio-secao-bem').classList.toggle('hidden',     tipo !== 'bem');
@@ -280,13 +282,15 @@ function filtrarPatio() {
 
   let visivel = 0;
   rows.forEach(row => {
-    const match = !texto || row.dataset.search.includes(texto);
+    const matchTexto = !texto || row.dataset.search.includes(texto);
+    const matchData  = !data  || row.dataset.entrada === data;
+    const match = matchTexto && matchData;
     row.classList.toggle('hidden', !match);
     if (match) visivel++;
   });
 
   const infoEl = document.getElementById('patio-info');
-  if (infoEl) infoEl.textContent = texto ? `${visivel} registro(s) encontrado(s)` : '';
+  if (infoEl) infoEl.textContent = (texto || data) ? `${visivel} registro(s) encontrado(s)` : '';
 
   const emptyEl = document.getElementById(emptyId);
   if (emptyEl) emptyEl.classList.toggle('hidden', visivel > 0 || rows.length === 0);
@@ -335,9 +339,10 @@ async function loadPatioVeiculos() {
       ? fotos.map(f => `<img src="data:image/jpeg;base64,${f}" class="foto-thumb" data-foto="${f}" title="Ver foto">`).join('')
       : '—';
 
-    const search = [v.placa, v.marca, v.modelo, v.cor, v.proprietario, v.vaga].join(' ').toLowerCase();
+    const search  = [v.placa, v.marca, v.modelo, v.cor, v.proprietario, v.vaga].join(' ').toLowerCase();
+    const entrada = v.entrada ? new Date(v.entrada).toISOString().slice(0, 10) : '';
     return `
-      <tr data-search="${search}">
+      <tr data-search="${search}" data-entrada="${entrada}">
         <td>${fotoCell}</td>
         <td><strong>${v.placa}</strong></td>
         <td>${v.marca || ''} ${v.modelo || ''}</td>
@@ -379,9 +384,10 @@ async function loadPatioBens() {
       ? fotos.map(f => `<img src="data:image/jpeg;base64,${f}" class="foto-thumb" data-foto="${f}" title="Ver foto">`).join('')
       : '—';
 
-    const search = [b.tipo, b.modelo, b.cor, b.proprietario, b.vaga].join(' ').toLowerCase();
+    const search  = [b.tipo, b.modelo, b.cor, b.proprietario, b.vaga].join(' ').toLowerCase();
+    const entrada = b.entrada ? new Date(b.entrada).toISOString().slice(0, 10) : '';
     return `
-      <tr class="row-clickable" data-bem-id="${b.id}" data-search="${search}">
+      <tr class="row-clickable" data-bem-id="${b.id}" data-search="${search}" data-entrada="${entrada}">
         <td>${fotoCell}</td>
         <td><strong>${b.tipo}</strong></td>
         <td>${b.modelo || '—'}</td>
