@@ -191,7 +191,6 @@ document.getElementById('btn-registrar-bem').addEventListener('click', async () 
   const dados = {
     tipo,
     cor:          val('bem-cor'),
-    modelo:       val('bem-modelo'),
     proprietario: val('bem-proprietario'),
     vaga:         val('bem-vaga'),
     fotosBase64:  fotosBase64Bem.length ? fotosBase64Bem : undefined,
@@ -200,7 +199,7 @@ document.getElementById('btn-registrar-bem').addEventListener('click', async () 
   const res = await _apiFetch('POST', '/api/bens/entrada', dados);
   if (res.success) {
     showResult('bem-result', `✅ Bem registrado com sucesso! (Registro #${res.data.id})`, 'success');
-    ['bem-tipo','bem-cor','bem-modelo','bem-proprietario','bem-vaga'].forEach(id => setVal(id, ''));
+    ['bem-tipo','bem-cor','bem-proprietario','bem-vaga'].forEach(id => setVal(id, ''));
     fotosBase64Bem.length = 0;
     renderFotosBemGrid();
     loadDashboard();
