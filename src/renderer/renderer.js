@@ -30,17 +30,23 @@ tickClock();
 
 // ─── Navegação por abas ───────────────────────────────────────────────────────
 
-function switchTab(tab) {
+function switchTab(tab, push = true) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
   const btn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
   if (btn) btn.classList.add('active');
   document.getElementById(`tab-${tab}`)?.classList.add('active');
 
+  if (push) history.pushState({ tab }, '', `#${tab}`);
+
   if (tab === 'dashboard') loadDashboard();
   if (tab === 'patio')     loadPatio();
   if (tab === 'historico') loadHistorico();
 }
+
+window.addEventListener('popstate', e => {
+  switchTab(e.state?.tab || 'dashboard', false);
+});
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.tab));
@@ -446,4 +452,6 @@ async function abrirModalVeiculos() {
 
 // ─── Inicialização ────────────────────────────────────────────────────────────
 renderFotosGrid();
-loadDashboard();
+const _initialTab = location.hash.slice(1) || 'dashboard';
+history.replaceState({ tab: _initialTab }, '', `#${_initialTab}`);
+switchTab(_initialTab, false);
