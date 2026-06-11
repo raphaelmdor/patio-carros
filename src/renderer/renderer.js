@@ -755,12 +755,17 @@ async function abrirModalVeiculos() {
 
   const res = await _apiFetch('GET', '/api/veiculos');
   if (!res.success || !res.data.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Nenhum veículo cadastrado</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-row">Nenhum veículo cadastrado</td></tr>';
     return;
   }
 
-  tbody.innerHTML = res.data.map(v => `
+  tbody.innerHTML = res.data.map(v => {
+    const noPatio  = v.status_atual === 'entrada';
+    const badgeCls = noPatio ? 'badge-entrada' : 'badge-fora';
+    const badgeTxt = noPatio ? '🟢 No pátio'   : '⚫ Fora';
+    return `
     <tr>
+      <td><span class="badge ${badgeCls}">${badgeTxt}</span></td>
       <td><strong>${v.placa}</strong></td>
       <td>${v.marca || ''} ${v.modelo || ''}</td>
       <td>${v.cor || '—'}</td>
@@ -769,7 +774,8 @@ async function abrirModalVeiculos() {
       <td>${v.municipio ? `${v.municipio}/${v.uf}` : (v.uf || '—')}</td>
       <td>${fmtDate(v.created_at)}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
 // ─── Inicialização ────────────────────────────────────────────────────────────

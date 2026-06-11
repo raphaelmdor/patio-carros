@@ -471,9 +471,10 @@ export async function getFotosVeiculo(placa: string): Promise<string[]> {
 
 export async function listarTodosVeiculos(): Promise<any[]> {
   const [rows] = await pool.execute<any[]>(`
-    SELECT placa, marca, modelo, cor, ano, proprietario, municipio, uf, created_at
-    FROM veiculos
-    ORDER BY created_at DESC
+    SELECT v.placa, v.marca, v.modelo, v.cor, v.ano, v.proprietario, v.municipio, v.uf, v.created_at,
+      (SELECT m.tipo FROM movimentacoes m WHERE m.placa = v.placa ORDER BY m.data_hora DESC LIMIT 1) AS status_atual
+    FROM veiculos v
+    ORDER BY v.created_at DESC
   `);
   return rows;
 }

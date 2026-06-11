@@ -275,6 +275,7 @@ textarea { resize: vertical; }
 }
 .badge-entrada { background: rgba(63,185,80,.18);  color: var(--green); }
 .badge-saida   { background: rgba(248,81,73,.18);  color: var(--red);   }
+.badge-fora    { background: rgba(139,148,158,.15); color: var(--txt2);  }
 
 /* ─── Foto upload ───────────────────────────────────────────────────────── */
 .foto-upload-area {
