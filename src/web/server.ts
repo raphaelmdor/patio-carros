@@ -7,6 +7,7 @@ import {
   registrarEntrada,
   registrarSaida,
   buscarHistorico,
+  getFotosVeiculo,
 } from '../main/database';
 import { consultarPlaca, isPlacaValida } from '../main/detranService';
 
@@ -20,8 +21,8 @@ app.use((_req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   next();
 });
-// __dirname = dist/web/ → ../../src/web/public
-const PUBLIC_DIR = path.join(__dirname, '..', '..', 'src', 'web', 'public');
+// __dirname = dist/web/ → ../../src/renderer
+const PUBLIC_DIR = path.join(__dirname, '..', '..', 'src', 'renderer');
 app.use(express.static(PUBLIC_DIR));
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
@@ -100,6 +101,17 @@ app.post('/api/saida', async (req, res) => {
     const result = await registrarSaida(placa.toUpperCase());
     if (!result) return res.status(404).json({ success: false, error: 'Veículo não está no pátio' });
     res.json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── Fotos ────────────────────────────────────────────────────────────────────
+
+app.get('/api/fotos/:placa', async (req, res) => {
+  try {
+    const fotos = await getFotosVeiculo(req.params.placa.toUpperCase());
+    res.json({ success: true, data: fotos });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
