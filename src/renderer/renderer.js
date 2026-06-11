@@ -527,7 +527,6 @@ async function loadHistorico(filtros = {}) {
       <td>${m.marca || ''} ${m.modelo || ''}</td>
       <td><span class="badge badge-${m.tipo}">${m.tipo}</span></td>
       <td>${m.vaga || '—'}</td>
-      <td>${m.valor_cobrado ? `R$ ${parseFloat(m.valor_cobrado).toFixed(2)}` : '—'}</td>
     </tr>
   `).join('');
 }
