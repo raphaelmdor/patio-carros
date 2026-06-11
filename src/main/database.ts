@@ -19,7 +19,7 @@ export async function initDatabase(): Promise<void> {
       port:     parseInt(u.port || '3306'),
       user:     u.username,
       password: decodeURIComponent(u.password),
-      database: u.pathname.slice(1),
+      database: u.pathname.slice(1) || process.env.DB_NAME || process.env.MYSQLDATABASE || 'railway',
     };
   } else {
     connConfig = {
