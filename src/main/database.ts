@@ -327,6 +327,15 @@ export async function buscarHistorico(filtros: FiltroBusca): Promise<any[]> {
   return rows;
 }
 
+export async function getVeiculoCompleto(placa: string): Promise<any | null> {
+  const [rows] = await pool.execute<any[]>(
+    `SELECT placa, marca, modelo, cor, ano, proprietario, municipio, uf, created_at
+     FROM veiculos WHERE placa = ?`,
+    [placa.toUpperCase()]
+  );
+  return rows[0] ?? null;
+}
+
 export async function getFotosVeiculo(placa: string): Promise<string[]> {
   const [veiculoRows] = await pool.execute<any[]>(
     'SELECT id FROM veiculos WHERE placa = ?',

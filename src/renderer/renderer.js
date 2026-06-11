@@ -312,23 +312,22 @@ async function saidaRapida(placa) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function filtrarHistorico() {
+  const data = val('f-data');
   loadHistorico({
     placa:      val('f-placa'),
-    dataInicio: val('f-inicio'),
-    dataFim:    val('f-fim'),
+    dataInicio: data || undefined,
+    dataFim:    data || undefined,
   });
 }
 
 document.getElementById('btn-filtrar').addEventListener('click', filtrarHistorico);
-
 document.getElementById('f-placa').addEventListener('keydown', e => {
   if (e.key === 'Enter') filtrarHistorico();
 });
-document.getElementById('f-inicio').addEventListener('change', filtrarHistorico);
-document.getElementById('f-fim').addEventListener('change', filtrarHistorico);
+document.getElementById('f-data').addEventListener('change', filtrarHistorico);
 
 document.getElementById('btn-limpar').addEventListener('click', () => {
-  ['f-placa','f-inicio','f-fim'].forEach(id => setVal(id, ''));
+  ['f-placa','f-data'].forEach(id => setVal(id, ''));
   loadHistorico();
 });
 
@@ -363,7 +362,10 @@ async function loadHistorico(filtros = {}) {
   }
 
   tbody.innerHTML = res.data.map(m => `
-    <tr>
+    <tr class="row-clickable" data-placa="${m.placa}"
+        data-tipo="${m.tipo}" data-hora="${m.data_hora}"
+        data-vaga="${m.vaga || ''}" data-valor="${m.valor_cobrado || ''}"
+        data-obs="${(m.observacao || '').replace(/"/g,'&quot;')}">
       <td>${fmtDate(m.data_hora)}</td>
       <td><strong>${m.placa}</strong></td>
       <td>${m.marca || ''} ${m.modelo || ''}</td>
@@ -373,6 +375,69 @@ async function loadHistorico(filtros = {}) {
     </tr>
   `).join('');
 }
+
+// ─── Clique na linha do histórico → modal de detalhes ────────────────────────
+
+document.getElementById('historico-tbody').addEventListener('click', async e => {
+  const row = e.target.closest('tr[data-placa]');
+  if (!row) return;
+
+  const placa = row.dataset.placa;
+  const tipo  = row.dataset.tipo;
+  const hora  = row.dataset.hora;
+  const vaga  = row.dataset.vaga;
+  const valor = row.dataset.valor;
+  const obs   = row.dataset.obs;
+
+  const modal = document.getElementById('modal-info');
+  const body  = document.getElementById('modal-info-body');
+  document.getElementById('modal-info-title').textContent = `Placa ${placa}`;
+  body.innerHTML = '<p style="padding:18px;color:var(--txt2)">Carregando...</p>';
+  modal.classList.remove('hidden');
+
+  const res = await _apiFetch('GET', `/api/veiculo/${encodeURIComponent(placa)}`);
+  const v   = res.success ? res.data.veiculo : null;
+  const fotos = (res.success && res.data.fotos?.length) ? res.data.fotos : [];
+
+  const campo = (label, value) => value
+    ? `<div class="info-item"><span class="info-label">${label}</span><span class="info-val">${value}</span></div>`
+    : '';
+
+  const fotosHtml = fotos.length
+    ? `<div class="info-fotos">${fotos.map(f => `<img src="data:image/jpeg;base64,${f}" class="foto-thumb" data-foto="${f}" title="Ver foto">`).join('')}</div>`
+    : '';
+
+  body.innerHTML = `
+    <div class="modal-info-body-inner">
+      <h4 class="info-section-title">Movimentação</h4>
+      <div class="info-grid">
+        ${campo('Tipo', `<span class="badge badge-${tipo}">${tipo}</span>`)}
+        ${campo('Data / Hora', fmtDate(hora))}
+        ${campo('Vaga', vaga || '—')}
+        ${campo('Valor', valor ? `R$ ${parseFloat(valor).toFixed(2)}` : '—')}
+        ${obs ? campo('Observação', obs) : ''}
+      </div>
+
+      <h4 class="info-section-title">Veículo</h4>
+      <div class="info-grid">
+        ${campo('Placa', placa)}
+        ${v ? campo('Marca', v.marca) : ''}
+        ${v ? campo('Modelo', v.modelo) : ''}
+        ${v ? campo('Cor', v.cor) : ''}
+        ${v ? campo('Ano', v.ano) : ''}
+        ${v ? campo('Proprietário', v.proprietario) : ''}
+        ${v ? campo('Município / UF', v.municipio ? `${v.municipio} / ${v.uf}` : v.uf) : ''}
+        ${v ? campo('Cadastrado em', fmtDate(v.created_at)) : ''}
+      </div>
+
+      ${fotosHtml}
+    </div>
+  `;
+
+  body.querySelectorAll('img[data-foto]').forEach(img => {
+    img.addEventListener('click', () => abrirFoto(img.dataset.foto));
+  });
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Utilitários
@@ -468,8 +533,7 @@ document.getElementById('card-no-patio').addEventListener('click', () => {
 
 document.getElementById('card-mov-hoje').addEventListener('click', () => {
   const hoje = new Date().toISOString().slice(0, 10);
-  setVal('f-inicio', hoje);
-  setVal('f-fim',    hoje);
+  setVal('f-data', hoje);
   switchTab('historico', true, { dataInicio: hoje, dataFim: hoje });
 });
 
@@ -480,6 +544,13 @@ document.getElementById('card-cadastrados').addEventListener('click', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // MODAL — VEÍCULOS CADASTRADOS
 // ═══════════════════════════════════════════════════════════════════════════════
+
+document.getElementById('modal-info-close').addEventListener('click', () => {
+  document.getElementById('modal-info').classList.add('hidden');
+});
+document.getElementById('modal-info').addEventListener('click', function (e) {
+  if (e.target === this) this.classList.add('hidden');
+});
 
 document.getElementById('modal-veiculos-close').addEventListener('click', () => {
   document.getElementById('modal-veiculos').classList.add('hidden');

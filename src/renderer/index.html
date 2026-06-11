@@ -219,9 +219,8 @@
     <section id="tab-historico" class="tab-content">
       <h2>Histórico de Movimentações</h2>
       <div class="filters">
-        <input id="f-placa"  type="text" placeholder="Placa (Enter para pesquisar)" autocomplete="off">
-        <input id="f-inicio" type="date" title="Data início">
-        <input id="f-fim"    type="date" title="Data fim">
+        <input id="f-placa" type="text" placeholder="Placa (Enter para pesquisar)" autocomplete="off">
+        <input id="f-data"  type="date" title="Data">
         <button id="btn-filtrar" class="btn btn-secondary btn-sm">🔍 Pesquisar</button>
         <button id="btn-limpar"  class="btn btn-ghost btn-sm">✕ Limpar</button>
       </div>
@@ -242,6 +241,17 @@
 <!-- Modal foto -->
 <div id="modal-foto" class="modal-overlay hidden">
   <img id="modal-foto-img" class="modal-img" alt="Foto do veículo">
+</div>
+
+<!-- Modal detalhes do registro -->
+<div id="modal-info" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="modal-info-title">Detalhes</h3>
+      <button id="modal-info-close" class="btn-modal-close">✕</button>
+    </div>
+    <div id="modal-info-body" class="modal-info-body"></div>
+  </div>
 </div>
 
 <!-- Modal veículos cadastrados -->

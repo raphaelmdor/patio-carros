@@ -7,6 +7,7 @@ import {
   buscarHistorico,
   getDashboard,
   getFotosVeiculo,
+  getVeiculoCompleto,
   registrarEntradaBem,
   EntradaInput,
   FiltroBusca,
@@ -78,6 +79,17 @@ export function registerRoutes(app: Express): void {
   app.get('/api/fotos/:placa', async (req: Request, res: Response) => {
     try { res.json(ok(await getFotosVeiculo(req.params.placa))); }
     catch (e: any) { res.json(fail(e.message ?? 'Erro ao buscar fotos')); }
+  });
+
+  app.get('/api/veiculo/:placa', async (req: Request, res: Response) => {
+    try {
+      const placa = req.params.placa.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const [veiculo, fotos] = await Promise.all([
+        getVeiculoCompleto(placa),
+        getFotosVeiculo(placa),
+      ]);
+      res.json(ok({ veiculo, fotos }));
+    } catch (e: any) { res.json(fail(e.message ?? 'Erro ao buscar veículo')); }
   });
 
   app.get('/api/veiculos', async (_req: Request, res: Response) => {
