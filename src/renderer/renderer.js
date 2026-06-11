@@ -30,18 +30,20 @@ tickClock();
 
 // ─── Navegação por abas ───────────────────────────────────────────────────────
 
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const tab = btn.dataset.tab;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(`tab-${tab}`).classList.add('active');
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+  const btn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+  if (btn) btn.classList.add('active');
+  document.getElementById(`tab-${tab}`)?.classList.add('active');
 
-    if (tab === 'dashboard') loadDashboard();
-    if (tab === 'patio')     loadPatio();
-    if (tab === 'historico') loadHistorico();
-  });
+  if (tab === 'dashboard') loadDashboard();
+  if (tab === 'patio')     loadPatio();
+  if (tab === 'historico') loadHistorico();
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
 });
 
 // ─── Formatação de placa (maiúsculas ao digitar) ───────────────────────────────
@@ -383,6 +385,63 @@ document.getElementById('fotos-grid').addEventListener('click', e => {
 function abrirFoto(base64) {
   document.getElementById('modal-foto-img').src = `data:image/jpeg;base64,${base64}`;
   document.getElementById('modal-foto').classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CARDS DO DASHBOARD CLICÁVEIS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+document.getElementById('card-no-patio').addEventListener('click', () => {
+  switchTab('patio');
+});
+
+document.getElementById('card-mov-hoje').addEventListener('click', () => {
+  const hoje = new Date().toISOString().slice(0, 10);
+  switchTab('historico');
+  setVal('f-inicio', hoje);
+  setVal('f-fim',    hoje);
+  loadHistorico({ dataInicio: hoje, dataFim: hoje });
+});
+
+document.getElementById('card-cadastrados').addEventListener('click', () => {
+  abrirModalVeiculos();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MODAL — VEÍCULOS CADASTRADOS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+document.getElementById('modal-veiculos-close').addEventListener('click', () => {
+  document.getElementById('modal-veiculos').classList.add('hidden');
+});
+
+document.getElementById('modal-veiculos').addEventListener('click', function (e) {
+  if (e.target === this) this.classList.add('hidden');
+});
+
+async function abrirModalVeiculos() {
+  const modal = document.getElementById('modal-veiculos');
+  const tbody = document.getElementById('modal-veiculos-tbody');
+  modal.classList.remove('hidden');
+  tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Carregando...</td></tr>';
+
+  const res = await _apiFetch('GET', '/api/veiculos');
+  if (!res.success || !res.data.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Nenhum veículo cadastrado</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = res.data.map(v => `
+    <tr>
+      <td><strong>${v.placa}</strong></td>
+      <td>${v.marca || ''} ${v.modelo || ''}</td>
+      <td>${v.cor || '—'}</td>
+      <td>${v.ano || '—'}</td>
+      <td>${v.proprietario || '—'}</td>
+      <td>${v.municipio ? `${v.municipio}/${v.uf}` : (v.uf || '—')}</td>
+      <td>${fmtDate(v.created_at)}</td>
+    </tr>
+  `).join('');
 }
 
 // ─── Inicialização ────────────────────────────────────────────────────────────

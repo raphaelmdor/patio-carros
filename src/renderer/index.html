@@ -36,21 +36,21 @@
     <section id="tab-dashboard" class="tab-content active">
       <h2>Visão Geral</h2>
       <div class="cards">
-        <div class="card card-blue">
+        <div class="card card-blue card-clickable" id="card-no-patio" title="Ver veículos no pátio">
           <span class="card-icon">🚗</span>
           <div>
             <span class="card-value" id="dash-no-patio">—</span>
             <span class="card-label">No Pátio Agora</span>
           </div>
         </div>
-        <div class="card card-green">
+        <div class="card card-green card-clickable" id="card-mov-hoje" title="Ver movimentações de hoje">
           <span class="card-icon">📅</span>
           <div>
             <span class="card-value" id="dash-mov-hoje">—</span>
             <span class="card-label">Movimentações Hoje</span>
           </div>
         </div>
-        <div class="card card-purple">
+        <div class="card card-purple card-clickable" id="card-cadastrados" title="Ver todos os veículos cadastrados">
           <span class="card-icon">🗂️</span>
           <div>
             <span class="card-value" id="dash-total">—</span>
@@ -199,6 +199,24 @@
 <!-- Modal foto -->
 <div id="modal-foto" class="modal-overlay hidden">
   <img id="modal-foto-img" class="modal-img" alt="Foto do veículo">
+</div>
+
+<!-- Modal veículos cadastrados -->
+<div id="modal-veiculos" class="modal-overlay hidden">
+  <div class="modal-box" id="modal-veiculos-box">
+    <div class="modal-header">
+      <h3>Veículos Cadastrados</h3>
+      <button id="modal-veiculos-close" class="btn-modal-close">✕</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Placa</th><th>Marca / Modelo</th><th>Cor</th><th>Ano</th><th>Proprietário</th><th>Município / UF</th><th>Cadastrado em</th>
+        </tr></thead>
+        <tbody id="modal-veiculos-tbody"></tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <script src="renderer.js"></script>

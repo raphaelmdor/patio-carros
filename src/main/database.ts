@@ -309,6 +309,15 @@ export async function getFotosVeiculo(placa: string): Promise<string[]> {
   return rows.map(r => (r.foto as Buffer).toString('base64'));
 }
 
+export async function listarTodosVeiculos(): Promise<any[]> {
+  const [rows] = await pool.execute<any[]>(`
+    SELECT placa, marca, modelo, cor, ano, proprietario, municipio, uf, created_at
+    FROM veiculos
+    ORDER BY created_at DESC
+  `);
+  return rows;
+}
+
 export async function getDashboard(): Promise<Record<string, number>> {
   const [[totalVeiculos]]    = await pool.execute<any[]>('SELECT COUNT(*) AS v FROM veiculos');
   const [[movHoje]]          = await pool.execute<any[]>("SELECT COUNT(*) AS v FROM movimentacoes WHERE DATE(data_hora) = CURDATE()");

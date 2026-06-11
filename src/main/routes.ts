@@ -3,6 +3,7 @@ import {
   registrarEntrada,
   registrarSaida,
   listarVeiculosNoPatio,
+  listarTodosVeiculos,
   buscarHistorico,
   getDashboard,
   getFotosVeiculo,
@@ -75,5 +76,10 @@ export function registerRoutes(app: Express): void {
   app.get('/api/fotos/:placa', async (req: Request, res: Response) => {
     try { res.json(ok(await getFotosVeiculo(req.params.placa))); }
     catch (e: any) { res.json(fail(e.message ?? 'Erro ao buscar fotos')); }
+  });
+
+  app.get('/api/veiculos', async (_req: Request, res: Response) => {
+    try { res.json(ok(await listarTodosVeiculos())); }
+    catch (e: any) { res.json(fail(e.message ?? 'Erro ao listar veículos')); }
   });
 }
