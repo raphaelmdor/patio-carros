@@ -757,7 +757,11 @@ async function abrirModalVeiculos() {
     _apiFetch('GET', '/api/patio'),
   ]);
 
-  if (!resVeiculos.success || !resVeiculos.data.length) {
+  if (!resVeiculos.success) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-row" style="color:var(--red)">Erro: ${resVeiculos.error}</td></tr>`;
+    return;
+  }
+  if (!resVeiculos.data.length) {
     tbody.innerHTML = '<tr><td colspan="8" class="empty-row">Nenhum veículo cadastrado</td></tr>';
     return;
   }

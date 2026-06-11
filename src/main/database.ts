@@ -470,12 +470,12 @@ export async function getFotosVeiculo(placa: string): Promise<string[]> {
 }
 
 export async function listarTodosVeiculos(): Promise<any[]> {
-  const [[veiculos], [saidas]] = await Promise.all([
-    pool.execute<any[]>('SELECT placa, marca, modelo, cor, ano, proprietario, created_at FROM veiculos ORDER BY created_at DESC'),
-    pool.execute<any[]>("SELECT placa, MAX(data_hora) AS ultima_saida FROM movimentacoes WHERE tipo = 'saida' GROUP BY placa"),
-  ]);
-  const saidasMap = new Map((saidas as any[]).map(s => [s.placa, s.ultima_saida]));
-  return (veiculos as any[]).map(v => ({ ...v, ultima_saida: saidasMap.get(v.placa) ?? null }));
+  const r1 = await pool.execute('SELECT placa, marca, modelo, cor, ano, proprietario, created_at FROM veiculos ORDER BY created_at DESC');
+  const veiculos = r1[0] as any[];
+  const r2 = await pool.execute("SELECT placa, MAX(data_hora) AS ultima_saida FROM movimentacoes WHERE tipo = 'saida' GROUP BY placa");
+  const saidas = r2[0] as any[];
+  const saidasMap = new Map(saidas.map((s: any) => [s.placa, s.ultima_saida]));
+  return veiculos.map((v: any) => ({ ...v, ultima_saida: saidasMap.get(v.placa) ?? null }));
 }
 
 export async function getDashboard(): Promise<Record<string, number>> {
