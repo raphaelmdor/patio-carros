@@ -750,16 +750,22 @@ async function abrirModalVeiculos() {
   const modal = document.getElementById('modal-veiculos');
   const tbody = document.getElementById('modal-veiculos-tbody');
   modal.classList.remove('hidden');
-  tbody.innerHTML = '<tr><td colspan="7" class="empty-row">Carregando...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" class="empty-row">Carregando...</td></tr>';
 
-  const res = await _apiFetch('GET', '/api/veiculos');
-  if (!res.success || !res.data.length) {
+  const [resVeiculos, resPatio] = await Promise.all([
+    _apiFetch('GET', '/api/veiculos'),
+    _apiFetch('GET', '/api/patio'),
+  ]);
+
+  if (!resVeiculos.success || !resVeiculos.data.length) {
     tbody.innerHTML = '<tr><td colspan="8" class="empty-row">Nenhum veículo cadastrado</td></tr>';
     return;
   }
 
-  tbody.innerHTML = res.data.map(v => {
-    const noPatio  = v.status_atual === 'entrada';
+  const placasNoPatio = new Set((resPatio.success ? resPatio.data : []).map(v => v.placa));
+
+  tbody.innerHTML = resVeiculos.data.map(v => {
+    const noPatio  = placasNoPatio.has(v.placa);
     const badgeCls = noPatio ? 'badge-entrada' : 'badge-fora';
     const badgeTxt = noPatio ? '🟢 No pátio'   : '⚫ Fora';
     return `
