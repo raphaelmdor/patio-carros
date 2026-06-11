@@ -210,36 +210,6 @@ document.getElementById('btn-registrar-bem').addEventListener('click', async () 
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SAÍDA
-// ═══════════════════════════════════════════════════════════════════════════════
-
-document.getElementById('btn-registrar-saida').addEventListener('click', saida);
-document.getElementById('saida-placa').addEventListener('keydown', e => {
-  if (e.key === 'Enter') saida();
-});
-
-async function saida() {
-  const placa   = val('saida-placa');
-  const infoBox = document.getElementById('saida-info');
-
-  if (!placa) { showResult('saida-result', 'Informe a placa do veículo.', 'error'); return; }
-
-  const res = await api.registrarSaida(placa);
-
-  if (res.success) {
-    infoBox.innerHTML = `
-      <strong>Placa:</strong> ${placa.toUpperCase()}<br>
-      <strong>Tempo de estadia:</strong> ${res.data.tempoEstadia}
-    `;
-    infoBox.classList.remove('hidden');
-    showResult('saida-result', `✅ Saída registrada! Tempo de estadia: ${res.data.tempoEstadia}`, 'success');
-    setVal('saida-placa', '');
-    loadDashboard();
-  } else {
-    infoBox.classList.add('hidden');
-    showResult('saida-result', `❌ ${res.error}`, 'error');
-  }
-}
 
 
 // ═══════════════════════════════════════════════════════════════════════════════

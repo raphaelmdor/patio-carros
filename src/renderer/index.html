@@ -24,7 +24,6 @@
   <nav>
     <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
     <button class="tab-btn"        data-tab="entrada">🟢 Entrada</button>
-    <button class="tab-btn"        data-tab="saida">🔴 Saída</button>
     <button class="tab-btn"        data-tab="patio">🅿️ Pátio Atual</button>
     <button class="tab-btn"        data-tab="historico">📋 Histórico</button>
   </nav>
@@ -183,24 +182,6 @@
 
     </section>
 
-    <!-- Saída -->
-    <section id="tab-saida" class="tab-content">
-      <h2>Registrar Saída</h2>
-      <div class="form-card" style="max-width:480px">
-        <div class="form-group">
-          <label>Placa do Veículo</label>
-          <div class="placa-row">
-            <input id="saida-placa" type="text" class="input-placa"
-                   placeholder="ABC1234" maxlength="8" autocomplete="off">
-            <button id="btn-registrar-saida" class="btn btn-danger">
-              🚪 Registrar Saída
-            </button>
-          </div>
-        </div>
-        <div id="saida-info" class="info-box hidden"></div>
-        <div id="saida-result" class="result-msg"></div>
-      </div>
-    </section>
 
     <!-- Pátio Atual -->
     <section id="tab-patio" class="tab-content">
