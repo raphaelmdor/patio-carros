@@ -54,31 +54,53 @@ export async function consultarPlaca(placa: string): Promise<DadosVeiculo | null
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      timeout: 8000,
+      timeout: 10000,
     });
 
-    if (response.data?.error) return null;
+    const body = response.data;
+    console.log('DETRAN response status:', response.status);
+    console.log('DETRAN response body:', JSON.stringify(body).slice(0, 500));
 
-    // Pega o resultado principal (principal: true) ou o primeiro
-    const resultados: any[] = response.data?.data?.resultados ?? [];
-    if (!resultados.length) return null;
+    if (body?.error || body?.status === false) return null;
+
+    // Suporta tanto { data: { resultados: [...] } } quanto { response: {...} }
+    const resultados: any[] = body?.data?.resultados ?? body?.resultados ?? [];
+
+    if (!resultados.length) {
+      // Tenta ler dado direto no body (alguns provedores retornam objeto único)
+      const d = body?.data ?? body?.response ?? body;
+      if (d?.marca || d?.modelo) {
+        return {
+          placa:        placaFormatada,
+          marca:        d.marca   ?? d.MARCA   ?? '',
+          modelo:       d.modelo  ?? d.MODELO  ?? '',
+          cor:          d.cor     ?? d.COR      ?? '',
+          ano:          d.anoFabricacao ?? d.ano ?? d.ANO ?? 0,
+          municipio:    d.municipio ?? '',
+          uf:           d.uf ?? '',
+          proprietario: d.proprietario ?? d.nome ?? '',
+        };
+      }
+      return null;
+    }
 
     const d = resultados.find((r: any) => r.principal) ?? resultados[0];
 
     return {
       placa:        placaFormatada,
-      marca:        d.marca   ?? '',
-      modelo:       d.modelo  ?? '',
-      cor:          d.cor     ?? '',
-      ano:          d.anoFabricacao ?? 0,
-      municipio:    '',
-      uf:           '',
-      proprietario: '',
+      marca:        d.marca   ?? d.MARCA   ?? '',
+      modelo:       d.modelo  ?? d.MODELO  ?? '',
+      cor:          d.cor     ?? d.COR      ?? '',
+      ano:          d.anoFabricacao ?? d.ano ?? d.ANO ?? 0,
+      municipio:    d.municipio ?? '',
+      uf:           d.uf ?? '',
+      proprietario: d.proprietario ?? d.nome ?? '',
     };
   } catch (error: any) {
     if (error.response?.status === 404) return null;
-    console.error('Erro na API DETRAN:', error.message, error.response?.data);
-    throw new Error('Falha ao consultar API do DETRAN');
+    console.error('Erro na API DETRAN:', error.message);
+    console.error('Response:', JSON.stringify(error.response?.data).slice(0, 300));
+    throw new Error(`Falha ao consultar API do DETRAN: ${error.response?.status ?? error.message}`);
   }
 }
 
