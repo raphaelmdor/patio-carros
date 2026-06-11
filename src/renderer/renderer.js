@@ -231,7 +231,7 @@ async function loadPatio() {
   const agora = Date.now();
 
   const rows = await Promise.all(res.data.map(async v => {
-    const diffMs  = agora - new Date(v.entrada).getTime();
+    const diffMs  = Math.max(0, agora - new Date(v.entrada).getTime());
     const horas   = Math.floor(diffMs / 3_600_000);
     const minutos = Math.floor((diffMs % 3_600_000) / 60_000);
     const fotoRes = await api.getFotosVeiculo(v.placa);
