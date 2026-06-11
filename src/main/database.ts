@@ -100,10 +100,43 @@ async function createTablesIfNotExist(): Promise<void> {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
 
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS bens (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        tipo         VARCHAR(100) NOT NULL,
+        cor          VARCHAR(40),
+        modelo       VARCHAR(100),
+        proprietario VARCHAR(120),
+        vaga         VARCHAR(10),
+        data_hora    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_data (data_hora)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+
     console.log('✅ Tabelas prontas');
   } finally {
     conn.release();
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bens
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface BemInput {
+  tipo: string;
+  cor?: string;
+  modelo?: string;
+  proprietario?: string;
+  vaga?: string;
+}
+
+export async function registrarEntradaBem(dados: BemInput): Promise<number> {
+  const [result] = await pool.execute(
+    `INSERT INTO bens (tipo, cor, modelo, proprietario, vaga) VALUES (?, ?, ?, ?, ?)`,
+    [dados.tipo, dados.cor || null, dados.modelo || null, dados.proprietario || null, dados.vaga || null]
+  );
+  return (result as any).insertId;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

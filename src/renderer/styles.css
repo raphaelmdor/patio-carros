@@ -16,6 +16,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+.hidden { display: none !important; }
 
 body {
   background: var(--bg0);
@@ -367,6 +368,35 @@ textarea { resize: vertical; }
   border-radius: var(--radius);
   border: 2px solid var(--border);
 }
+
+/* ─── Seletor Veículos / Bens ───────────────────────────────────────────── */
+.tipo-selector {
+  display: inline-flex;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 18px;
+  gap: 2px;
+}
+.tipo-btn {
+  background: transparent;
+  border: none;
+  color: var(--txt2);
+  padding: 7px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+}
+.tipo-btn.active {
+  background: var(--bg1);
+  color: var(--txt1);
+  box-shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+.tipo-btn:not(.active):hover { color: var(--txt1); }
 
 /* ─── Card clicável ─────────────────────────────────────────────────────── */
 .card-clickable {

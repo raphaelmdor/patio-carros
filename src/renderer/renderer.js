@@ -100,6 +100,18 @@ function renderRecentTable(items) {
 // ENTRADA
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// ─── Seletor Veículos / Bens ──────────────────────────────────────────────────
+
+document.querySelectorAll('.tipo-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tipo-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tipo = btn.dataset.tipo;
+    document.getElementById('form-veiculo').classList.toggle('hidden', tipo !== 'veiculo');
+    document.getElementById('form-bem').classList.toggle('hidden', tipo !== 'bem');
+  });
+});
+
 const btnConsultar  = document.getElementById('btn-consultar');
 const statusHint    = document.getElementById('placa-status');
 
@@ -169,6 +181,30 @@ function setHint(msg, cls) {
   statusHint.textContent = msg;
   statusHint.className = `status-hint ${cls}`;
 }
+
+// ─── Registro de Bens ────────────────────────────────────────────────────────
+
+document.getElementById('btn-registrar-bem').addEventListener('click', async () => {
+  const tipo = val('bem-tipo');
+  if (!tipo) { showResult('bem-result', 'Informe o tipo do bem.', 'error'); return; }
+
+  const dados = {
+    tipo,
+    cor:          val('bem-cor'),
+    modelo:       val('bem-modelo'),
+    proprietario: val('bem-proprietario'),
+    vaga:         val('bem-vaga'),
+  };
+
+  const res = await _apiFetch('POST', '/api/bens/entrada', dados);
+  if (res.success) {
+    showResult('bem-result', `✅ Bem registrado com sucesso! (Registro #${res.data.id})`, 'success');
+    ['bem-tipo','bem-cor','bem-modelo','bem-proprietario','bem-vaga'].forEach(id => setVal(id, ''));
+    loadDashboard();
+  } else {
+    showResult('bem-result', `❌ ${res.error}`, 'error');
+  }
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SAÍDA

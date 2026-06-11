@@ -7,8 +7,10 @@ import {
   buscarHistorico,
   getDashboard,
   getFotosVeiculo,
+  registrarEntradaBem,
   EntradaInput,
   FiltroBusca,
+  BemInput,
 } from './database';
 import { consultarPlaca } from './detranService';
 
@@ -81,5 +83,17 @@ export function registerRoutes(app: Express): void {
   app.get('/api/veiculos', async (_req: Request, res: Response) => {
     try { res.json(ok(await listarTodosVeiculos())); }
     catch (e: any) { res.json(fail(e.message ?? 'Erro ao listar veículos')); }
+  });
+
+  app.post('/api/bens/entrada', async (req: Request, res: Response) => {
+    try {
+      const dados: BemInput = req.body;
+      if (!dados.tipo?.trim()) { res.json(fail('Tipo é obrigatório')); return; }
+      const id = await registrarEntradaBem(dados);
+      res.json(ok({ id }));
+    } catch (e: any) {
+      console.error('POST /api/bens/entrada:', e);
+      res.json(fail(e.message ?? 'Erro ao registrar bem'));
+    }
   });
 }

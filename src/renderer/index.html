@@ -72,6 +72,14 @@
     <!-- Entrada -->
     <section id="tab-entrada" class="tab-content">
       <h2>Registrar Entrada</h2>
+
+      <div class="tipo-selector">
+        <button class="tipo-btn active" data-tipo="veiculo">🚗 Veículos</button>
+        <button class="tipo-btn"        data-tipo="bem">📦 Bens</button>
+      </div>
+
+      <!-- Formulário de Veículos (padrão) -->
+      <div id="form-veiculo">
       <div class="form-card">
 
         <div class="form-group">
@@ -131,6 +139,40 @@
         </button>
         <div id="entrada-result" class="result-msg"></div>
       </div>
+      </div><!-- /form-veiculo -->
+
+      <!-- Formulário de Bens -->
+      <div id="form-bem" class="hidden">
+      <div class="form-card">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Tipo</label>
+            <input id="bem-tipo" type="text" placeholder="Ex: Moto, Bicicleta, Caixa...">
+          </div>
+          <div class="form-group">
+            <label>Cor</label>
+            <input id="bem-cor" type="text" placeholder="Ex: Preto">
+          </div>
+          <div class="form-group">
+            <label>Modelo</label>
+            <input id="bem-modelo" type="text" placeholder="Ex: CG 160">
+          </div>
+          <div class="form-group">
+            <label>Proprietário</label>
+            <input id="bem-proprietario" type="text" placeholder="Nome do proprietário">
+          </div>
+          <div class="form-group">
+            <label>Vaga</label>
+            <input id="bem-vaga" type="text" placeholder="Ex: B-05">
+          </div>
+        </div>
+        <button id="btn-registrar-bem" class="btn btn-success btn-lg">
+          ✅ Registrar Entrada
+        </button>
+        <div id="bem-result" class="result-msg"></div>
+      </div>
+      </div><!-- /form-bem -->
+
     </section>
 
     <!-- Saída -->
