@@ -776,8 +776,8 @@ async function abrirModalVeiculos() {
       <td>${v.cor || '—'}</td>
       <td>${v.ano || '—'}</td>
       <td>${v.proprietario || '—'}</td>
-      <td>${v.municipio ? `${v.municipio}/${v.uf}` : (v.uf || '—')}</td>
       <td>${fmtDate(v.created_at)}</td>
+      <td>${v.ultima_saida ? fmtDate(v.ultima_saida) : '—'}</td>
     </tr>
   `;
   }).join('');

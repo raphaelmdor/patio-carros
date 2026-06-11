@@ -470,10 +470,13 @@ export async function getFotosVeiculo(placa: string): Promise<string[]> {
 }
 
 export async function listarTodosVeiculos(): Promise<any[]> {
-  const [rows] = await pool.execute<any[]>(`
-    SELECT placa, marca, modelo, cor, ano, proprietario, municipio, uf, created_at
-    FROM veiculos
-    ORDER BY created_at DESC
+  const [rows] = await pool.query<any[]>(`
+    SELECT v.placa, v.marca, v.modelo, v.cor, v.ano, v.proprietario, v.created_at,
+      MAX(CASE WHEN m.tipo = 'saida' THEN m.data_hora END) AS ultima_saida
+    FROM veiculos v
+    LEFT JOIN movimentacoes m ON m.placa = v.placa
+    GROUP BY v.placa, v.marca, v.modelo, v.cor, v.ano, v.proprietario, v.created_at
+    ORDER BY v.created_at DESC
   `);
   return rows;
 }
