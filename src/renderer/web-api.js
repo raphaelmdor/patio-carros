@@ -4,17 +4,25 @@
 
 (function () {
   async function post(path, body) {
-    const r = await fetch(path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    return r.json();
+    try {
+      const r = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      return r.json();
+    } catch (e) {
+      return { success: false, error: 'Sem conexão com o servidor' };
+    }
   }
 
   async function get(path) {
-    const r = await fetch(path);
-    return r.json();
+    try {
+      const r = await fetch(path);
+      return r.json();
+    } catch (e) {
+      return { success: false, error: 'Sem conexão com o servidor' };
+    }
   }
 
   window.api = {
