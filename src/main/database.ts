@@ -472,7 +472,7 @@ export async function getFotosVeiculo(placa: string): Promise<string[]> {
 export async function listarTodosVeiculos(): Promise<any[]> {
   const r1 = await pool.execute('SELECT placa, marca, modelo, cor, ano, proprietario, created_at FROM veiculos ORDER BY created_at DESC');
   const veiculos = r1[0] as any[];
-  const r2 = await pool.execute("SELECT placa, MAX(data_hora) AS ultima_saida FROM movimentacoes WHERE tipo = 'saida' GROUP BY placa");
+  const r2 = await pool.execute("SELECT v.placa, MAX(m.data_hora) AS ultima_saida FROM movimentacoes m JOIN veiculos v ON m.veiculo_id = v.id WHERE m.tipo = 'saida' GROUP BY v.placa");
   const saidas = r2[0] as any[];
   const saidasMap = new Map(saidas.map((s: any) => [s.placa, s.ultima_saida]));
   return veiculos.map((v: any) => ({ ...v, ultima_saida: saidasMap.get(v.placa) ?? null }));
