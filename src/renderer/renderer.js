@@ -248,6 +248,50 @@ async function saida() {
 
 document.getElementById('btn-refresh-patio').addEventListener('click', loadPatio);
 
+// ─── Filtro do Pátio ──────────────────────────────────────────────────────────
+
+document.querySelectorAll('.tipo-patio-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tipo-patio-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filtrarPatio();
+  });
+});
+
+document.getElementById('btn-filtrar-patio').addEventListener('click', filtrarPatio);
+document.getElementById('btn-limpar-patio').addEventListener('click', () => {
+  document.getElementById('patio-busca').value = '';
+  filtrarPatio();
+});
+document.getElementById('patio-busca').addEventListener('keydown', e => {
+  if (e.key === 'Enter') filtrarPatio();
+});
+
+function filtrarPatio() {
+  const tipo  = document.querySelector('.tipo-patio-btn.active')?.dataset.tipo || 'veiculo';
+  const texto = (document.getElementById('patio-busca').value || '').toLowerCase().trim();
+
+  document.getElementById('patio-secao-veiculo').classList.toggle('hidden', tipo !== 'veiculo');
+  document.getElementById('patio-secao-bem').classList.toggle('hidden',     tipo !== 'bem');
+
+  const tbodyId = tipo === 'veiculo' ? 'patio-tbody' : 'bens-patio-tbody';
+  const emptyId = tipo === 'veiculo' ? 'patio-empty' : 'bens-patio-empty';
+  const rows    = document.getElementById(tbodyId).querySelectorAll('tr[data-search]');
+
+  let visivel = 0;
+  rows.forEach(row => {
+    const match = !texto || row.dataset.search.includes(texto);
+    row.classList.toggle('hidden', !match);
+    if (match) visivel++;
+  });
+
+  const infoEl = document.getElementById('patio-info');
+  if (infoEl) infoEl.textContent = texto ? `${visivel} registro(s) encontrado(s)` : '';
+
+  const emptyEl = document.getElementById(emptyId);
+  if (emptyEl) emptyEl.classList.toggle('hidden', visivel > 0 || rows.length === 0);
+}
+
 document.getElementById('patio-tbody').addEventListener('click', e => {
   const btn = e.target.closest('button[data-placa]');
   if (btn) { saidaRapida(btn.dataset.placa); return; }
@@ -291,8 +335,9 @@ async function loadPatioVeiculos() {
       ? fotos.map(f => `<img src="data:image/jpeg;base64,${f}" class="foto-thumb" data-foto="${f}" title="Ver foto">`).join('')
       : '—';
 
+    const search = [v.placa, v.marca, v.modelo, v.cor, v.proprietario, v.vaga].join(' ').toLowerCase();
     return `
-      <tr>
+      <tr data-search="${search}">
         <td>${fotoCell}</td>
         <td><strong>${v.placa}</strong></td>
         <td>${v.marca || ''} ${v.modelo || ''}</td>
@@ -306,6 +351,7 @@ async function loadPatioVeiculos() {
     `;
   }));
   tbody.innerHTML = rows.join('');
+  filtrarPatio();
 }
 
 async function loadPatioBens() {
@@ -333,8 +379,9 @@ async function loadPatioBens() {
       ? fotos.map(f => `<img src="data:image/jpeg;base64,${f}" class="foto-thumb" data-foto="${f}" title="Ver foto">`).join('')
       : '—';
 
+    const search = [b.tipo, b.modelo, b.cor, b.proprietario, b.vaga].join(' ').toLowerCase();
     return `
-      <tr class="row-clickable" data-bem-id="${b.id}">
+      <tr class="row-clickable" data-bem-id="${b.id}" data-search="${search}">
         <td>${fotoCell}</td>
         <td><strong>${b.tipo}</strong></td>
         <td>${b.modelo || '—'}</td>
@@ -348,6 +395,7 @@ async function loadPatioBens() {
     `;
   }));
   tbody.innerHTML = rows.join('');
+  filtrarPatio();
 }
 
 async function saidaRapida(placa) {

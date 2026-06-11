@@ -209,34 +209,47 @@
         <button id="btn-refresh-patio" class="btn btn-secondary btn-sm">🔄 Atualizar</button>
       </div>
 
-      <h3 class="patio-subtitulo">🚗 Veículos</h3>
-      <div class="table-wrap">
-        <table id="patio-table">
-          <thead><tr>
-            <th>Foto</th><th>Placa</th><th>Marca / Modelo</th><th>Cor</th>
-            <th>Proprietário</th><th>Entrada</th><th>Tempo</th><th>Vaga</th><th>Ação</th>
-          </tr></thead>
-          <tbody id="patio-tbody"></tbody>
-        </table>
+      <div class="filters">
+        <div class="tipo-selector">
+          <button class="tipo-patio-btn active" data-tipo="veiculo">🚗 Veículos</button>
+          <button class="tipo-patio-btn"        data-tipo="bem">📦 Bens</button>
+        </div>
+        <input id="patio-busca" type="text" placeholder="Buscar por placa, modelo, proprietário..." autocomplete="off">
+        <button id="btn-filtrar-patio" class="btn btn-secondary btn-sm">🔍 Pesquisar</button>
+        <button id="btn-limpar-patio"  class="btn btn-ghost btn-sm">✕ Limpar</button>
       </div>
-      <div id="patio-empty" class="empty-state hidden">
-        <div class="empty-icon">🅿️</div>
-        <p>Nenhum veículo no pátio</p>
+      <div id="patio-info" class="historico-info"></div>
+
+      <div id="patio-secao-veiculo">
+        <div class="table-wrap">
+          <table id="patio-table">
+            <thead><tr>
+              <th>Foto</th><th>Placa</th><th>Marca / Modelo</th><th>Cor</th>
+              <th>Proprietário</th><th>Entrada</th><th>Tempo</th><th>Vaga</th><th>Ação</th>
+            </tr></thead>
+            <tbody id="patio-tbody"></tbody>
+          </table>
+        </div>
+        <div id="patio-empty" class="empty-state hidden">
+          <div class="empty-icon">🅿️</div>
+          <p>Nenhum veículo no pátio</p>
+        </div>
       </div>
 
-      <h3 class="patio-subtitulo" style="margin-top:28px">📦 Bens</h3>
-      <div class="table-wrap">
-        <table id="bens-patio-table">
-          <thead><tr>
-            <th>Foto</th><th>Tipo</th><th>Modelo</th><th>Cor</th>
-            <th>Proprietário</th><th>Entrada</th><th>Tempo</th><th>Vaga</th><th>Ação</th>
-          </tr></thead>
-          <tbody id="bens-patio-tbody"></tbody>
-        </table>
-      </div>
-      <div id="bens-patio-empty" class="empty-state hidden">
-        <div class="empty-icon">📦</div>
-        <p>Nenhum bem no pátio</p>
+      <div id="patio-secao-bem" class="hidden">
+        <div class="table-wrap">
+          <table id="bens-patio-table">
+            <thead><tr>
+              <th>Foto</th><th>Tipo</th><th>Modelo</th><th>Cor</th>
+              <th>Proprietário</th><th>Entrada</th><th>Tempo</th><th>Vaga</th><th>Ação</th>
+            </tr></thead>
+            <tbody id="bens-patio-tbody"></tbody>
+          </table>
+        </div>
+        <div id="bens-patio-empty" class="empty-state hidden">
+          <div class="empty-icon">📦</div>
+          <p>Nenhum bem no pátio</p>
+        </div>
       </div>
     </section>
 
