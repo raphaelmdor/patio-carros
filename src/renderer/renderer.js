@@ -194,12 +194,15 @@ document.getElementById('btn-registrar-bem').addEventListener('click', async () 
     modelo:       val('bem-modelo'),
     proprietario: val('bem-proprietario'),
     vaga:         val('bem-vaga'),
+    fotosBase64:  fotosBase64Bem.length ? fotosBase64Bem : undefined,
   };
 
   const res = await _apiFetch('POST', '/api/bens/entrada', dados);
   if (res.success) {
     showResult('bem-result', `✅ Bem registrado com sucesso! (Registro #${res.data.id})`, 'success');
     ['bem-tipo','bem-cor','bem-modelo','bem-proprietario','bem-vaga'].forEach(id => setVal(id, ''));
+    fotosBase64Bem = [];
+    renderFotosBemGrid();
     loadDashboard();
   } else {
     showResult('bem-result', `❌ ${res.error}`, 'error');
@@ -465,58 +468,62 @@ function showResult(id, msg, type) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 let fotosBase64Atual = [];
+let fotosBase64Bem   = [];
 
 document.getElementById('modal-foto').addEventListener('click', function () {
   this.classList.add('hidden');
 });
 
-document.getElementById('entrada-foto').addEventListener('change', function () {
-  const files = Array.from(this.files);
-  if (!files.length) return;
-
-  files.forEach(file => {
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const dataUrl = e.target.result;
-      const b64 = dataUrl.split(',')[1];
-      fotosBase64Atual.push(b64);
-      renderFotosGrid();
-    };
-    reader.readAsDataURL(file);
-  });
-
-  this.value = '';
-});
-
-function renderFotosGrid() {
-  const grid = document.getElementById('fotos-grid');
-  const fotos = fotosBase64Atual.map((b64, i) => `
+function _renderGrid(gridId, inputId, fotos) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  const items = fotos.map((b64, i) => `
     <div class="foto-item">
       <img src="data:image/jpeg;base64,${b64}" data-index="${i}" title="Ver foto">
       <button class="btn-del-foto" data-index="${i}" title="Remover">✕</button>
     </div>
   `).join('');
-
   const addBtn = `
-    <label for="entrada-foto" class="foto-placeholder foto-placeholder-sm">
+    <label for="${inputId}" class="foto-placeholder foto-placeholder-sm">
       <span class="foto-icon">📷</span>
-      <span>${fotosBase64Atual.length ? '+' : 'Adicionar fotos'}</span>
+      <span>${fotos.length ? '+' : 'Adicionar fotos'}</span>
     </label>
   `;
-
-  grid.innerHTML = fotos + addBtn;
+  grid.innerHTML = items + addBtn;
 }
 
-document.getElementById('fotos-grid').addEventListener('click', e => {
-  const del = e.target.closest('.btn-del-foto');
-  if (del) {
-    fotosBase64Atual.splice(parseInt(del.dataset.index), 1);
-    renderFotosGrid();
-    return;
-  }
-  const img = e.target.closest('img[data-index]');
-  if (img) abrirFoto(fotosBase64Atual[parseInt(img.dataset.index)]);
-});
+function renderFotosGrid()    { _renderGrid('fotos-grid',     'entrada-foto', fotosBase64Atual); }
+function renderFotosBemGrid() { _renderGrid('fotos-grid-bem', 'bem-foto',     fotosBase64Bem);   }
+
+function _bindFotoInput(inputId, arr, renderFn) {
+  document.getElementById(inputId).addEventListener('change', function () {
+    const files = Array.from(this.files);
+    if (!files.length) return;
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        arr.push(e.target.result.split(',')[1]);
+        renderFn();
+      };
+      reader.readAsDataURL(file);
+    });
+    this.value = '';
+  });
+}
+
+function _bindFotoGrid(gridId, arr, renderFn) {
+  document.getElementById(gridId).addEventListener('click', e => {
+    const del = e.target.closest('.btn-del-foto');
+    if (del) { arr.splice(parseInt(del.dataset.index), 1); renderFn(); return; }
+    const img = e.target.closest('img[data-index]');
+    if (img) abrirFoto(arr[parseInt(img.dataset.index)]);
+  });
+}
+
+_bindFotoInput('entrada-foto', fotosBase64Atual, renderFotosGrid);
+_bindFotoInput('bem-foto',     fotosBase64Bem,   renderFotosBemGrid);
+_bindFotoGrid('fotos-grid',     fotosBase64Atual, renderFotosGrid);
+_bindFotoGrid('fotos-grid-bem', fotosBase64Bem,   renderFotosBemGrid);
 
 function abrirFoto(base64) {
   document.getElementById('modal-foto-img').src = `data:image/jpeg;base64,${base64}`;
@@ -587,6 +594,7 @@ async function abrirModalVeiculos() {
 
 // ─── Inicialização ────────────────────────────────────────────────────────────
 renderFotosGrid();
+renderFotosBemGrid();
 const _initialTab = location.hash.slice(1) || 'dashboard';
 history.replaceState({ tab: _initialTab }, '', `#${_initialTab}`);
 switchTab(_initialTab, false);

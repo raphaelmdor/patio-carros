@@ -113,6 +113,17 @@ async function createTablesIfNotExist(): Promise<void> {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
 
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS bens_fotos (
+        id        INT AUTO_INCREMENT PRIMARY KEY,
+        bem_id    INT NOT NULL,
+        foto      MEDIUMBLOB NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (bem_id) REFERENCES bens(id) ON DELETE CASCADE,
+        INDEX idx_bem_foto (bem_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+
     console.log('✅ Tabelas prontas');
   } finally {
     conn.release();
@@ -129,6 +140,7 @@ export interface BemInput {
   modelo?: string;
   proprietario?: string;
   vaga?: string;
+  fotosBase64?: string[];
 }
 
 export async function registrarEntradaBem(dados: BemInput): Promise<number> {
@@ -136,7 +148,18 @@ export async function registrarEntradaBem(dados: BemInput): Promise<number> {
     `INSERT INTO bens (tipo, cor, modelo, proprietario, vaga) VALUES (?, ?, ?, ?, ?)`,
     [dados.tipo, dados.cor || null, dados.modelo || null, dados.proprietario || null, dados.vaga || null]
   );
-  return (result as any).insertId;
+  const bemId = (result as any).insertId;
+
+  if (dados.fotosBase64?.length) {
+    for (const b64 of dados.fotosBase64) {
+      await pool.execute(
+        'INSERT INTO bens_fotos (bem_id, foto) VALUES (?, ?)',
+        [bemId, Buffer.from(b64, 'base64')]
+      );
+    }
+  }
+
+  return bemId;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
