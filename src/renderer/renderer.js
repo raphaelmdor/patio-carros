@@ -241,53 +241,6 @@ async function saida() {
   }
 }
 
-// ─── Toggle saída Veículos / Bens ─────────────────────────────────────────────
-
-document.querySelectorAll('.tipo-saida-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tipo-saida-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const tipo = btn.dataset.tipo;
-    document.getElementById('saida-form-veiculo').classList.toggle('hidden', tipo !== 'veiculo');
-    document.getElementById('saida-form-bem').classList.toggle('hidden',     tipo !== 'bem');
-    if (tipo === 'bem') loadSaidaBens();
-  });
-});
-
-async function loadSaidaBens() {
-  const lista = document.getElementById('saida-bens-lista');
-  lista.innerHTML = '<p style="color:var(--txt2);padding:8px 0">Carregando...</p>';
-  const res = await _apiFetch('GET', '/api/bens/patio');
-  if (!res.success || !res.data.length) {
-    lista.innerHTML = '<p style="color:var(--txt2);padding:8px 0">Nenhum bem no pátio.</p>';
-    return;
-  }
-  lista.innerHTML = res.data.map(b => `
-    <div class="bem-saida-card">
-      <div class="bem-saida-info">
-        <strong>${b.tipo}</strong>${b.modelo ? ` — ${b.modelo}` : ''}
-        <span>${b.proprietario || '—'} · Vaga ${b.vaga || '—'} · desde ${fmtDate(b.entrada)}</span>
-      </div>
-      <button class="btn btn-danger btn-sm" data-bem-id="${b.id}" data-bem-desc="${b.tipo}">🚪 Saída</button>
-    </div>
-  `).join('');
-}
-
-document.getElementById('saida-bens-lista').addEventListener('click', async e => {
-  const btn = e.target.closest('button[data-bem-id]');
-  if (!btn) return;
-  const bemId = btn.dataset.bemId;
-  const desc  = btn.dataset.bemDesc;
-  if (!confirm(`Registrar saída do bem "${desc}"?`)) return;
-  const res = await _apiFetch('POST', '/api/bens/saida', { id: parseInt(bemId) });
-  if (res.success) {
-    showResult('saida-bem-result', `✅ Saída registrada! Tempo de estadia: ${res.data.tempoEstadia}`, 'success');
-    loadSaidaBens();
-    loadDashboard();
-  } else {
-    showResult('saida-bem-result', `❌ ${res.error}`, 'error');
-  }
-});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PÁTIO ATUAL
