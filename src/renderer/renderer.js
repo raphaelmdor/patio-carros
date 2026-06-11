@@ -30,7 +30,7 @@ tickClock();
 
 // ─── Navegação por abas ───────────────────────────────────────────────────────
 
-function switchTab(tab, push = true) {
+function switchTab(tab, push = true, historicoFiltros = null) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
   const btn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
@@ -41,7 +41,7 @@ function switchTab(tab, push = true) {
 
   if (tab === 'dashboard') loadDashboard();
   if (tab === 'patio')     loadPatio();
-  if (tab === 'historico') loadHistorico();
+  if (tab === 'historico') loadHistorico(historicoFiltros ?? {});
 }
 
 window.addEventListener('popstate', e => {
@@ -311,13 +311,21 @@ async function saidaRapida(placa) {
 // HISTÓRICO
 // ═══════════════════════════════════════════════════════════════════════════════
 
-document.getElementById('btn-filtrar').addEventListener('click', () => {
+function filtrarHistorico() {
   loadHistorico({
     placa:      val('f-placa'),
     dataInicio: val('f-inicio'),
     dataFim:    val('f-fim'),
   });
+}
+
+document.getElementById('btn-filtrar').addEventListener('click', filtrarHistorico);
+
+document.getElementById('f-placa').addEventListener('keydown', e => {
+  if (e.key === 'Enter') filtrarHistorico();
 });
+document.getElementById('f-inicio').addEventListener('change', filtrarHistorico);
+document.getElementById('f-fim').addEventListener('change', filtrarHistorico);
 
 document.getElementById('btn-limpar').addEventListener('click', () => {
   ['f-placa','f-inicio','f-fim'].forEach(id => setVal(id, ''));
@@ -325,10 +333,25 @@ document.getElementById('btn-limpar').addEventListener('click', () => {
 });
 
 async function loadHistorico(filtros = {}) {
-  const res   = await api.buscarHistorico({ ...filtros, limit: 200 });
-  const tbody = document.getElementById('historico-tbody');
+  const infoEl = document.getElementById('historico-info');
+  const tbody  = document.getElementById('historico-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Carregando...</td></tr>';
 
-  if (!res.success || !res.data.length) {
+  const res = await api.buscarHistorico({ ...filtros, limit: 500 });
+
+  if (!res.success) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Erro ao carregar histórico</td></tr>';
+    infoEl.textContent = '';
+    return;
+  }
+
+  const total = res.data.length;
+  const temFiltro = filtros.placa || filtros.dataInicio || filtros.dataFim;
+  infoEl.textContent = total
+    ? `${total} registro${total !== 1 ? 's' : ''} encontrado${total !== 1 ? 's' : ''}${temFiltro ? ' com os filtros aplicados' : ''}`
+    : '';
+
+  if (!total) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Nenhum registro encontrado</td></tr>';
     return;
   }
@@ -439,10 +462,9 @@ document.getElementById('card-no-patio').addEventListener('click', () => {
 
 document.getElementById('card-mov-hoje').addEventListener('click', () => {
   const hoje = new Date().toISOString().slice(0, 10);
-  switchTab('historico');
   setVal('f-inicio', hoje);
   setVal('f-fim',    hoje);
-  loadHistorico({ dataInicio: hoje, dataFim: hoje });
+  switchTab('historico', true, { dataInicio: hoje, dataFim: hoje });
 });
 
 document.getElementById('card-cadastrados').addEventListener('click', () => {

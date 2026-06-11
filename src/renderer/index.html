@@ -219,12 +219,13 @@
     <section id="tab-historico" class="tab-content">
       <h2>Histórico de Movimentações</h2>
       <div class="filters">
-        <input id="f-placa"   type="text" placeholder="Placa">
-        <input id="f-inicio"  type="date" title="Data início">
-        <input id="f-fim"     type="date" title="Data fim">
-        <button id="btn-filtrar" class="btn btn-secondary btn-sm">🔍 Filtrar</button>
+        <input id="f-placa"  type="text" placeholder="Placa (Enter para pesquisar)" autocomplete="off">
+        <input id="f-inicio" type="date" title="Data início">
+        <input id="f-fim"    type="date" title="Data fim">
+        <button id="btn-filtrar" class="btn btn-secondary btn-sm">🔍 Pesquisar</button>
         <button id="btn-limpar"  class="btn btn-ghost btn-sm">✕ Limpar</button>
       </div>
+      <div id="historico-info" class="historico-info"></div>
       <div class="table-wrap">
         <table>
           <thead><tr>

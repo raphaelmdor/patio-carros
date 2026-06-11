@@ -369,6 +369,14 @@ textarea { resize: vertical; }
   border: 2px solid var(--border);
 }
 
+/* ─── Histórico info ────────────────────────────────────────────────────── */
+.historico-info {
+  font-size: 12px;
+  color: var(--txt2);
+  margin: 8px 0 10px;
+  min-height: 16px;
+}
+
 /* ─── Seletor Veículos / Bens ───────────────────────────────────────────── */
 .tipo-selector {
   display: inline-flex;
