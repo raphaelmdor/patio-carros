@@ -173,7 +173,7 @@ function clearEntrada() {
   ['entrada-placa','entrada-marca','entrada-modelo','entrada-cor',
    'entrada-ano','entrada-proprietario','entrada-vaga','entrada-obs'].forEach(id => setVal(id, ''));
   setHint('', '');
-  fotosBase64Atual = [];
+  fotosBase64Atual.length = 0;
   renderFotosGrid();
 }
 
@@ -201,7 +201,7 @@ document.getElementById('btn-registrar-bem').addEventListener('click', async () 
   if (res.success) {
     showResult('bem-result', `✅ Bem registrado com sucesso! (Registro #${res.data.id})`, 'success');
     ['bem-tipo','bem-cor','bem-modelo','bem-proprietario','bem-vaga'].forEach(id => setVal(id, ''));
-    fotosBase64Bem = [];
+    fotosBase64Bem.length = 0;
     renderFotosBemGrid();
     loadDashboard();
   } else {
@@ -486,7 +486,7 @@ function _renderGrid(gridId, inputId, fotos) {
   const addBtn = `
     <label for="${inputId}" class="foto-placeholder foto-placeholder-sm">
       <span class="foto-icon">📷</span>
-      <span>${fotos.length ? '+' : 'Adicionar fotos'}</span>
+      <span>${fotos.length ? 'Adicionar mais' : 'Adicionar fotos'}</span>
     </label>
   `;
   grid.innerHTML = items + addBtn;
