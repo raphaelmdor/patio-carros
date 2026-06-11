@@ -337,17 +337,23 @@ async function loadHistorico(filtros = {}) {
   const tbody  = document.getElementById('historico-tbody');
   tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Carregando...</td></tr>';
 
-  const res = await api.buscarHistorico({ ...filtros, limit: 500 });
+  let res;
+  try {
+    res = await api.buscarHistorico({ ...filtros, limit: 500 });
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-row">Erro de conexão com o servidor</td></tr>`;
+    return;
+  }
 
   if (!res.success) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Erro ao carregar histórico</td></tr>';
-    infoEl.textContent = '';
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-row">Erro: ${res.error || 'falha ao carregar histórico'}</td></tr>`;
+    if (infoEl) infoEl.textContent = '';
     return;
   }
 
   const total = res.data.length;
   const temFiltro = filtros.placa || filtros.dataInicio || filtros.dataFim;
-  infoEl.textContent = total
+  if (infoEl) infoEl.textContent = total
     ? `${total} registro${total !== 1 ? 's' : ''} encontrado${total !== 1 ? 's' : ''}${temFiltro ? ' com os filtros aplicados' : ''}`
     : '';
 
