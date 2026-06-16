@@ -87,7 +87,7 @@ function renderRecentTable(items) {
   }
   tbody.innerHTML = items.map(m => `
     <tr>
-      <td><strong>${m.placa}</strong></td>
+      <td><strong>${m.placa || '—'}</strong></td>
       <td>${m.marca || ''} ${m.modelo || ''}</td>
       <td><span class="badge badge-${m.tipo}">${m.tipo}</span></td>
       <td>${fmtDate(m.data_hora)}</td>
@@ -487,12 +487,12 @@ async function loadHistorico(filtros = {}) {
   }
 
   tbody.innerHTML = res.data.map(m => `
-    <tr class="row-clickable" data-placa="${m.placa}"
+    <tr class="row-clickable" ${m.origem === 'bem' ? `data-bem-id="${m.bem_id}"` : `data-placa="${m.placa}"`}
         data-tipo="${m.tipo}" data-hora="${m.data_hora}"
         data-vaga="${m.vaga || ''}" data-valor="${m.valor_cobrado || ''}"
         data-obs="${(m.observacao || '').replace(/"/g,'&quot;')}">
       <td>${fmtDate(m.data_hora)}</td>
-      <td><strong>${m.placa}</strong></td>
+      <td><strong>${m.placa || '—'}</strong></td>
       <td>${m.marca || ''} ${m.modelo || ''}</td>
       <td><span class="badge badge-${m.tipo}">${m.tipo}</span></td>
       <td>${m.vaga || '—'}</td>
@@ -503,6 +503,9 @@ async function loadHistorico(filtros = {}) {
 // ─── Clique na linha do histórico → modal de detalhes ────────────────────────
 
 document.getElementById('historico-tbody').addEventListener('click', async e => {
+  const bemRow = e.target.closest('tr[data-bem-id]');
+  if (bemRow) { abrirModalBem(parseInt(bemRow.dataset.bemId)); return; }
+
   const row = e.target.closest('tr[data-placa]');
   if (!row) return;
 

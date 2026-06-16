@@ -418,6 +418,7 @@ export interface FiltroBusca {
 export async function buscarHistorico(filtros: FiltroBusca): Promise<any[]> {
   let query = `
     SELECT
+      'veiculo' AS origem, NULL AS bem_id,
       m.id, m.tipo, m.data_hora, m.valor_cobrado, m.observacao, m.vaga,
       v.placa, v.marca, v.modelo, v.cor
     FROM movimentacoes m
@@ -442,8 +443,37 @@ export async function buscarHistorico(filtros: FiltroBusca): Promise<any[]> {
   const limitNum = Math.min(Math.max(1, filtros.limit ?? 100), 1000);
   query += ` ORDER BY m.data_hora DESC LIMIT ${limitNum}`;
 
-  const [rows] = await pool.execute<any[]>(query, params);
-  return rows;
+  const [veiculoRows] = await pool.execute<any[]>(query, params);
+
+  // Filtro por placa não se aplica a bens (não possuem placa)
+  if (filtros.placa) return veiculoRows;
+
+  let bemQuery = `
+    SELECT
+      'bem' AS origem, b.id AS bem_id,
+      bm.id, bm.tipo, bm.data_hora, NULL AS valor_cobrado, NULL AS observacao, b.vaga,
+      NULL AS placa, b.tipo AS marca, b.modelo, b.cor
+    FROM bens_movimentacoes bm
+    JOIN bens b ON bm.bem_id = b.id
+    WHERE 1=1
+  `;
+  const bemParams: any[] = [];
+
+  if (filtros.dataInicio) {
+    bemQuery += ' AND bm.data_hora >= ?';
+    bemParams.push(filtros.dataInicio);
+  }
+  if (filtros.dataFim) {
+    bemQuery += ' AND bm.data_hora <= ?';
+    bemParams.push(`${filtros.dataFim} 23:59:59`);
+  }
+  bemQuery += ` ORDER BY bm.data_hora DESC LIMIT ${limitNum}`;
+
+  const [bemRows] = await pool.execute<any[]>(bemQuery, bemParams);
+
+  return [...veiculoRows, ...bemRows]
+    .sort((a, b) => new Date(b.data_hora).getTime() - new Date(a.data_hora).getTime())
+    .slice(0, limitNum);
 }
 
 export async function getVeiculoCompleto(placa: string): Promise<any | null> {
@@ -480,7 +510,8 @@ export async function listarTodosVeiculos(): Promise<any[]> {
 
 export async function getDashboard(): Promise<Record<string, number>> {
   const [[totalVeiculos]]    = await pool.execute<any[]>('SELECT COUNT(*) AS v FROM veiculos');
-  const [[movHoje]]          = await pool.execute<any[]>("SELECT COUNT(*) AS v FROM movimentacoes WHERE DATE(data_hora) = CURDATE()");
+  const [[movHojeVeiculos]]  = await pool.execute<any[]>("SELECT COUNT(*) AS v FROM movimentacoes WHERE DATE(data_hora) = CURDATE()");
+  const [[movHojeBens]]      = await pool.execute<any[]>("SELECT COUNT(*) AS v FROM bens_movimentacoes WHERE DATE(data_hora) = CURDATE()");
   const [[veiculosNoPatio]]  = await pool.execute<any[]>(`
     SELECT COUNT(*) AS v
     FROM movimentacoes m
@@ -490,10 +521,19 @@ export async function getDashboard(): Promise<Record<string, number>> {
         WHERE m2.veiculo_id = m.veiculo_id AND m2.tipo = 'saida' AND m2.id > m.id
       )
   `);
+  const [[bensNoPatio]]      = await pool.execute<any[]>(`
+    SELECT COUNT(*) AS v
+    FROM bens_movimentacoes bm
+    WHERE bm.tipo = 'entrada'
+      AND NOT EXISTS (
+        SELECT 1 FROM bens_movimentacoes bm2
+        WHERE bm2.bem_id = bm.bem_id AND bm2.tipo = 'saida' AND bm2.id > bm.id
+      )
+  `);
 
   return {
     totalVeiculos:    totalVeiculos.v,
-    veiculosNoPatio:  veiculosNoPatio.v,
-    movimentacoesHoje: movHoje.v,
+    veiculosNoPatio:  veiculosNoPatio.v + bensNoPatio.v,
+    movimentacoesHoje: movHojeVeiculos.v + movHojeBens.v,
   };
 }
