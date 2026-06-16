@@ -196,19 +196,20 @@ export async function getFotosBem(bemId: number): Promise<string[]> {
 }
 
 export async function listarBensNoPatio(): Promise<any[]> {
-  const [rows] = await pool.execute<any[]>(`
-    SELECT b.id, b.tipo, b.cor, b.modelo, b.proprietario, b.vaga,
-           bm.data_hora AS entrada
-    FROM bens_movimentacoes bm
-    JOIN bens b ON bm.bem_id = b.id
-    WHERE bm.tipo = 'entrada'
-      AND NOT EXISTS (
-        SELECT 1 FROM bens_movimentacoes bm2
-        WHERE bm2.bem_id = bm.bem_id AND bm2.tipo = 'saida' AND bm2.id > bm.id
-      )
-    ORDER BY bm.data_hora DESC
-  `);
-  return rows;
+  const r1 = await pool.execute('SELECT id, tipo, cor, modelo, proprietario, vaga FROM bens');
+  const bens = r1[0] as any[];
+  if (!bens.length) return [];
+
+  const r2 = await pool.execute('SELECT bem_id, tipo, data_hora FROM bens_movimentacoes ORDER BY id ASC');
+  const movs = r2[0] as any[];
+
+  const ultimaPorBem = new Map<number, { tipo: string; data_hora: any }>();
+  for (const m of movs) ultimaPorBem.set(m.bem_id, { tipo: m.tipo, data_hora: m.data_hora });
+
+  return bens
+    .filter(b => ultimaPorBem.get(b.id)?.tipo === 'entrada')
+    .map(b => ({ ...b, entrada: ultimaPorBem.get(b.id)!.data_hora }))
+    .sort((a, b) => new Date(b.entrada).getTime() - new Date(a.entrada).getTime());
 }
 
 export interface SaidaBemResult {

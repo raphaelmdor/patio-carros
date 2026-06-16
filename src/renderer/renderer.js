@@ -290,7 +290,12 @@ async function loadPatioVeiculos() {
 
   tbody.innerHTML = '';
 
-  if (!res.success || !res.data.length) {
+  if (!res.success) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-row" style="color:var(--red)">Erro: ${res.error}</td></tr>`;
+    emptyEl.classList.add('hidden');
+    return;
+  }
+  if (!res.data.length) {
     emptyEl.classList.remove('hidden');
     return;
   }
@@ -335,7 +340,12 @@ async function loadPatioBens() {
 
   tbody.innerHTML = '';
 
-  if (!res.success || !res.data.length) {
+  if (!res.success) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-row" style="color:var(--red)">Erro: ${res.error}</td></tr>`;
+    emptyEl.classList.add('hidden');
+    return;
+  }
+  if (!res.data.length) {
     emptyEl.classList.remove('hidden');
     return;
   }
