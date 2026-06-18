@@ -88,7 +88,7 @@ function renderRecentTable(items) {
   tbody.innerHTML = items.map(m => `
     <tr>
       <td><strong>${m.placa || '—'}</strong></td>
-      <td>${m.marca || ''} ${m.modelo || ''}</td>
+      <td>${m.origem === 'bem' ? '📦 ' : ''}${m.marca || ''} ${m.modelo || ''}</td>
       <td><span class="badge badge-${m.tipo}">${m.tipo}</span></td>
       <td>${fmtDate(m.data_hora)}</td>
       <td>${m.vaga || '—'}</td>
@@ -503,7 +503,7 @@ async function loadHistorico(filtros = {}) {
         data-obs="${(m.observacao || '').replace(/"/g,'&quot;')}">
       <td>${fmtDate(m.data_hora)}</td>
       <td><strong>${m.placa || '—'}</strong></td>
-      <td>${m.marca || ''} ${m.modelo || ''}</td>
+      <td>${m.origem === 'bem' ? '📦 ' : ''}${m.marca || ''} ${m.modelo || ''}</td>
       <td><span class="badge badge-${m.tipo}">${m.tipo}</span></td>
       <td>${m.vaga || '—'}</td>
     </tr>
