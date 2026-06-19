@@ -1,0 +1,74 @@
+// Polyfill de window.api para rodar o renderer no browser via fetch()
+// Em Electron, window.api é injetado pelo preload.ts via contextBridge antes
+// deste script rodar, então o if abaixo evita sobrescrever.
+
+(function () {
+  if (window.api) return; // Electron: preload já configurou window.api
+
+  async function post(path, body) {
+    try {
+      const r = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      return r.json();
+    } catch (e) {
+      return { success: false, error: 'Sem conexão com o servidor' };
+    }
+  }
+
+  async function get(path) {
+    try {
+      const r = await fetch(path);
+      return r.json();
+    } catch (e) {
+      return { success: false, error: 'Sem conexão com o servidor' };
+    }
+  }
+
+  window.api = {
+
+    async getDashboard() {
+      const json = await get('/api/dashboard');
+      if (!json.success) return json;
+      return { success: true, data: json.data.stats };
+    },
+
+    async buscarHistorico(filtros = {}) {
+      const p = new URLSearchParams();
+      if (filtros.placa)      p.set('placa', filtros.placa);
+      if (filtros.dataInicio) p.set('dataInicio', filtros.dataInicio);
+      if (filtros.dataFim)    p.set('dataFim', filtros.dataFim);
+      if (filtros.limit)      p.set('limit', String(filtros.limit));
+      return get('/api/historico?' + p);
+    },
+
+    async consultarPlaca(placa) {
+      const json = await get('/api/detran/' + encodeURIComponent(placa.toUpperCase()));
+      if (!json.success) return json;
+      const d = json.data;
+      if (!d.marca && !d.modelo) return { success: false, data: null };
+      return json;
+    },
+
+    async registrarEntrada(dados) {
+      const json = await post('/api/entrada', dados);
+      if (!json.success) return json;
+      return { success: true, data: { movimentacaoId: json.data.id } };
+    },
+
+    async registrarSaida(placa) {
+      return post('/api/saida', { placa });
+    },
+
+    async listarVeiculosNoPatio() {
+      return get('/api/patio');
+    },
+
+    async getFotosVeiculo(placa) {
+      return get('/api/fotos/' + encodeURIComponent(placa.toUpperCase()));
+    },
+
+  };
+})();
