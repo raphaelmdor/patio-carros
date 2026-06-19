@@ -2,7 +2,9 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
   <title>Pátio de Carros</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -20,9 +22,8 @@
 
   <!-- ── Navigation ─────────────────────────────────────────────────────── -->
   <nav>
-    <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+    <button class="tab-btn active" data-tab="dashboard">📊 Home</button>
     <button class="tab-btn"        data-tab="entrada">🟢 Entrada</button>
-    <button class="tab-btn"        data-tab="saida">🔴 Saída</button>
     <button class="tab-btn"        data-tab="patio">🅿️ Pátio Atual</button>
     <button class="tab-btn"        data-tab="historico">📋 Histórico</button>
   </nav>
@@ -34,21 +35,21 @@
     <section id="tab-dashboard" class="tab-content active">
       <h2>Visão Geral</h2>
       <div class="cards">
-        <div class="card card-blue">
+        <div class="card card-blue card-clickable" id="card-no-patio" title="Ver veículos no pátio">
           <span class="card-icon">🚗</span>
           <div>
             <span class="card-value" id="dash-no-patio">—</span>
             <span class="card-label">No Pátio Agora</span>
           </div>
         </div>
-        <div class="card card-green">
+        <div class="card card-green card-clickable" id="card-mov-hoje" title="Ver movimentações de hoje">
           <span class="card-icon">📅</span>
           <div>
             <span class="card-value" id="dash-mov-hoje">—</span>
             <span class="card-label">Movimentações Hoje</span>
           </div>
         </div>
-        <div class="card card-purple">
+        <div class="card card-purple card-clickable" id="card-cadastrados" title="Ver todos os veículos cadastrados">
           <span class="card-icon">🗂️</span>
           <div>
             <span class="card-value" id="dash-total">—</span>
@@ -60,7 +61,7 @@
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>Placa</th><th>Item</th><th>Tipo</th><th>Data / Hora</th><th>Vaga</th>
+            <th>Placa</th><th>Item</th><th>Movimentação</th><th>Data / Hora</th><th>Vaga</th>
           </tr></thead>
           <tbody id="recent-tbody"></tbody>
         </table>
@@ -70,6 +71,14 @@
     <!-- Entrada -->
     <section id="tab-entrada" class="tab-content">
       <h2>Registrar Entrada</h2>
+
+      <div class="tipo-selector">
+        <button class="tipo-btn active" data-tipo="veiculo">🚗 Veículos</button>
+        <button class="tipo-btn"        data-tipo="bem">📦 Bens</button>
+      </div>
+
+      <!-- Formulário de Veículos (padrão) -->
+      <div id="form-veiculo">
       <div class="form-card">
 
         <div class="form-group">
@@ -129,45 +138,96 @@
         </button>
         <div id="entrada-result" class="result-msg"></div>
       </div>
-    </section>
+      </div><!-- /form-veiculo -->
 
-    <!-- Saída -->
-    <section id="tab-saida" class="tab-content">
-      <h2>Registrar Saída</h2>
-      <div class="form-card" style="max-width:480px">
-        <div class="form-group">
-          <label>Placa do Veículo</label>
-          <div class="placa-row">
-            <input id="saida-placa" type="text" class="input-placa"
-                   placeholder="ABC1234" maxlength="8" autocomplete="off">
-            <button id="btn-registrar-saida" class="btn btn-danger">
-              🚪 Registrar Saída
-            </button>
+      <!-- Formulário de Bens -->
+      <div id="form-bem" class="hidden">
+      <div class="form-card">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Tipo</label>
+            <input id="bem-tipo" type="text" placeholder="Ex: Banca, Container...">
+          </div>
+          <div class="form-group">
+            <label>Cor</label>
+            <input id="bem-cor" type="text" placeholder="Ex: Preto">
+          </div>
+          <div class="form-group">
+            <label>Proprietário</label>
+            <input id="bem-proprietario" type="text" placeholder="Nome do proprietário">
+          </div>
+          <div class="form-group">
+            <label>Vaga</label>
+            <input id="bem-vaga" type="text" placeholder="Ex: B-05">
           </div>
         </div>
-        <div id="saida-info" class="info-box hidden"></div>
-        <div id="saida-result" class="result-msg"></div>
+        <div class="form-group">
+          <label>Foto do Bem</label>
+          <div class="foto-upload-area" id="foto-upload-area-bem">
+            <input type="file" id="bem-foto" accept="image/*" multiple style="display:none">
+            <div id="fotos-grid-bem" class="fotos-grid"></div>
+          </div>
+        </div>
+
+        <button id="btn-registrar-bem" class="btn btn-success btn-lg">
+          ✅ Registrar Entrada
+        </button>
+        <div id="bem-result" class="result-msg"></div>
       </div>
+      </div><!-- /form-bem -->
+
     </section>
+
 
     <!-- Pátio Atual -->
     <section id="tab-patio" class="tab-content">
       <div class="section-header">
-        <h2>Veículos no Pátio</h2>
+        <h2>Pátio Atual</h2>
         <button id="btn-refresh-patio" class="btn btn-secondary btn-sm">🔄 Atualizar</button>
       </div>
-      <div class="table-wrap">
-        <table id="patio-table">
-          <thead><tr>
-            <th>Foto</th><th>Placa</th><th>Marca / Modelo</th><th>Cor</th>
-            <th>Proprietário</th><th>Entrada</th><th>Tempo</th><th>Vaga</th><th>Ação</th>
-          </tr></thead>
-          <tbody id="patio-tbody"></tbody>
-        </table>
+
+      <div class="filters">
+        <div class="tipo-selector">
+          <button class="tipo-patio-btn active" data-tipo="veiculo">🚗 Veículos</button>
+          <button class="tipo-patio-btn"        data-tipo="bem">📦 Bens</button>
+        </div>
+        <input id="patio-busca" type="text" placeholder="Buscar por placa, modelo, proprietário..." autocomplete="off">
+        <input id="patio-data" type="date" title="Data de entrada">
+        <button id="btn-filtrar-patio" class="btn btn-secondary btn-sm">🔍 Pesquisar</button>
+        <button id="btn-limpar-patio"  class="btn btn-ghost btn-sm">✕ Limpar</button>
       </div>
-      <div id="patio-empty" class="empty-state hidden">
-        <div class="empty-icon">🅿️</div>
-        <p>Pátio vazio no momento</p>
+      <div id="patio-info" class="historico-info"></div>
+
+      <div id="patio-secao-veiculo">
+        <div class="table-wrap">
+          <table id="patio-table">
+            <thead><tr>
+              <th>Foto</th><th>Placa</th><th>Marca / Modelo</th><th>Cor</th>
+              <th>Proprietário</th><th>Entrada</th><th>Tempo</th><th>Vaga</th><th>Ação</th>
+            </tr></thead>
+            <tbody id="patio-tbody"></tbody>
+          </table>
+        </div>
+        <div id="patio-empty" class="empty-state hidden">
+          <div class="empty-icon">🅿️</div>
+          <p>Nenhum veículo no pátio</p>
+        </div>
+      </div>
+
+      <div id="patio-secao-bem" class="hidden">
+        <div class="table-wrap">
+          <table id="bens-patio-table">
+            <thead><tr>
+              <th>Foto</th><th>Tipo</th><th>Modelo</th><th>Cor</th>
+              <th>Proprietário</th><th>Entrada</th><th>Tempo</th><th>Vaga</th><th>Ação</th>
+            </tr></thead>
+            <tbody id="bens-patio-tbody"></tbody>
+          </table>
+        </div>
+        <div id="bens-patio-empty" class="empty-state hidden">
+          <div class="empty-icon">📦</div>
+          <p>Nenhum bem no pátio</p>
+        </div>
       </div>
     </section>
 
@@ -175,17 +235,17 @@
     <section id="tab-historico" class="tab-content">
       <h2>Histórico de Movimentações</h2>
       <div class="filters">
-        <input id="f-placa"   type="text" placeholder="Placa">
-        <input id="f-inicio"  type="date" title="Data início">
-        <input id="f-fim"     type="date" title="Data fim">
-        <button id="btn-filtrar" class="btn btn-secondary btn-sm">🔍 Filtrar</button>
+        <input id="f-placa" type="text" placeholder="Placa (Enter para pesquisar)" autocomplete="off">
+        <input id="f-data"  type="date" title="Data">
+        <button id="btn-filtrar" class="btn btn-secondary btn-sm">🔍 Pesquisar</button>
         <button id="btn-limpar"  class="btn btn-ghost btn-sm">✕ Limpar</button>
       </div>
+      <div id="historico-info" class="historico-info"></div>
       <div class="table-wrap">
         <table>
           <thead><tr>
             <th>Data / Hora</th><th>Placa</th><th>Item</th>
-            <th>Tipo</th><th>Vaga</th><th>Valor</th>
+            <th>Movimentação</th><th>Vaga</th>
           </tr></thead>
           <tbody id="historico-tbody"></tbody>
         </table>
@@ -199,7 +259,35 @@
   <img id="modal-foto-img" class="modal-img" alt="Foto do veículo">
 </div>
 
-<script src="web-api.js"></script>
+<!-- Modal detalhes do registro -->
+<div id="modal-info" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="modal-info-title">Detalhes</h3>
+      <button id="modal-info-close" class="btn-modal-close">✕</button>
+    </div>
+    <div id="modal-info-body" class="modal-info-body"></div>
+  </div>
+</div>
+
+<!-- Modal veículos cadastrados -->
+<div id="modal-veiculos" class="modal-overlay hidden">
+  <div class="modal-box" id="modal-veiculos-box">
+    <div class="modal-header">
+      <h3>Veículos Cadastrados</h3>
+      <button id="modal-veiculos-close" class="btn-modal-close">✕</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Status</th><th>Placa</th><th>Marca / Modelo</th><th>Cor</th><th>Ano</th><th>Proprietário</th><th>Cadastrado Em</th><th>Retirado Em</th>
+        </tr></thead>
+        <tbody id="modal-veiculos-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <script src="renderer.js"></script>
 </body>
 </html>
