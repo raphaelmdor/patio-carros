@@ -3,6 +3,8 @@
 // Aqui substituímos por chamadas REST à API Express.
 
 (function () {
+  if (window.api) return; // Electron: preload já configurou window.api
+
   async function post(path, body) {
     try {
       const r = await fetch(path, {
