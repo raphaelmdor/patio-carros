@@ -85,16 +85,19 @@ export async function consultarPlaca(placa: string): Promise<DadosVeiculo | null
     }
 
     const d = resultados.find((r: any) => r.principal) ?? resultados[0];
+    // dados = registro do DETRAN (cor, proprietário, município corretos)
+    // resultados = tabela FIPE (marca, modelo, ano mais precisos)
+    const dados = body?.data?.dados ?? body?.response?.dados ?? body?.dados ?? {};
 
     return {
       placa:        placaFormatada,
-      marca:        d.marca   ?? d.MARCA   ?? '',
-      modelo:       d.modelo  ?? d.MODELO  ?? '',
-      cor:          d.cor     ?? d.COR      ?? '',
-      ano:          d.anoFabricacao ?? d.ano ?? d.ANO ?? 0,
-      municipio:    d.municipio ?? '',
-      uf:           d.uf ?? '',
-      proprietario: d.proprietario ?? d.nome ?? '',
+      marca:        d.marca        ?? d.MARCA        ?? dados.MARCA        ?? dados.marca        ?? '',
+      modelo:       d.modelo       ?? d.MODELO       ?? dados.MODELO       ?? dados.modelo       ?? '',
+      cor:          dados.COR      ?? dados.cor       ?? dados.Cor          ?? d.cor              ?? d.COR ?? '',
+      ano:          d.anoFabricacao ?? d.ano ?? d.ANO ?? dados.ANO          ?? dados.ano          ?? 0,
+      municipio:    dados.municipio ?? dados.MUNICIPIO ?? d.municipio       ?? '',
+      uf:           dados.uf        ?? dados.UF        ?? d.uf              ?? '',
+      proprietario: dados.proprietario ?? dados.PROPRIETARIO ?? dados.nome  ?? d.proprietario    ?? d.nome ?? '',
     };
   } catch (error: any) {
     if (error.response?.status === 404) return null;
