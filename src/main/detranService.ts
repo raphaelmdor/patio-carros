@@ -59,7 +59,8 @@ export async function consultarPlaca(placa: string): Promise<DadosVeiculo | null
 
     const body = response.data;
     console.log('DETRAN response status:', response.status);
-    console.log('DETRAN response body:', JSON.stringify(body).slice(0, 500));
+    console.log('DETRAN response body:', JSON.stringify(body, null, 2).slice(0, 3000));
+    console.log('DETRAN dados keys:', Object.keys(body?.data?.dados ?? body?.response?.dados ?? body?.dados ?? {}));
 
     if (body?.error || body?.status === false) return null;
 
