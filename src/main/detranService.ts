@@ -49,56 +49,39 @@ export async function consultarPlaca(placa: string): Promise<DadosVeiculo | null
   }
 
   try {
-    const response = await axios.post(apiUrl, { tipo: 'fipe-chassi', placa: placaFormatada, homolog: false }, {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      timeout: 10000,
-    });
+    const response = await axios.post(apiUrl,
+      { tipo: 'veiculos-dados-v1', placa: placaFormatada, homolog: false },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000,
+      }
+    );
 
     const body = response.data;
-    console.log('DETRAN response status:', response.status);
-    console.log('DETRAN response body:', JSON.stringify(body, null, 2).slice(0, 3000));
-    console.log('DETRAN dados keys:', Object.keys(body?.data?.dados ?? body?.response?.dados ?? body?.dados ?? {}));
 
-    if (body?.error || body?.status === false) return null;
+    if (body?.error === true) return null;
 
-    // Suporta tanto { data: { resultados: [...] } } quanto { response: {...} }
-    const resultados: any[] = body?.data?.resultados ?? body?.resultados ?? [];
+    const data = body?.data ?? {};
+    if (!data.placa && !data.modelo_marca) return null;
 
-    if (!resultados.length) {
-      // Tenta ler dado direto no body (alguns provedores retornam objeto único)
-      const d = body?.data ?? body?.response ?? body;
-      if (d?.marca || d?.modelo) {
-        return {
-          placa:        placaFormatada,
-          marca:        d.marca   ?? d.MARCA   ?? '',
-          modelo:       d.modelo  ?? d.MODELO  ?? '',
-          cor:          d.cor     ?? d.COR      ?? '',
-          ano:          d.anoFabricacao ?? d.ano ?? d.ANO ?? 0,
-          municipio:    d.municipio ?? '',
-          uf:           d.uf ?? '',
-          proprietario: d.proprietario ?? d.nome ?? '',
-        };
-      }
-      return null;
-    }
-
-    const d = resultados.find((r: any) => r.principal) ?? resultados[0];
-    // dados = registro do DETRAN (cor, proprietário, município corretos)
-    // resultados = tabela FIPE (marca, modelo, ano mais precisos)
-    const dados = body?.data?.dados ?? body?.response?.dados ?? body?.dados ?? {};
+    // modelo_marca vem como "marca/modelo" (ex: "vw/gol 1.0")
+    const modeloMarca: string = data.modelo_marca ?? '';
+    const slashIdx = modeloMarca.indexOf('/');
+    const marca  = slashIdx >= 0 ? modeloMarca.slice(0, slashIdx).trim() : modeloMarca;
+    const modelo = slashIdx >= 0 ? modeloMarca.slice(slashIdx + 1).trim() : '';
 
     return {
       placa:        placaFormatada,
-      marca:        d.marca        ?? d.MARCA        ?? dados.MARCA        ?? dados.marca        ?? '',
-      modelo:       d.modelo       ?? d.MODELO       ?? dados.MODELO       ?? dados.modelo       ?? '',
-      cor:          dados.COR      ?? dados.cor       ?? dados.Cor          ?? d.cor              ?? d.COR ?? '',
-      ano:          d.anoFabricacao ?? d.ano ?? d.ANO ?? dados.ANO          ?? dados.ano          ?? 0,
-      municipio:    dados.municipio ?? dados.MUNICIPIO ?? d.municipio       ?? '',
-      uf:           dados.uf        ?? dados.UF        ?? d.uf              ?? '',
-      proprietario: dados.proprietario ?? dados.PROPRIETARIO ?? dados.nome  ?? d.proprietario    ?? d.nome ?? '',
+      marca,
+      modelo,
+      cor:          data.cor          ?? '',
+      ano:          data.ano          ?? data.ano_fabricacao ?? 0,
+      municipio:    data.cidade_placa ?? '',
+      uf:           data.estado_placa ?? '',
+      proprietario: data.cliente?.nome ?? '',
     };
   } catch (error: any) {
     if (error.response?.status === 404) return null;
